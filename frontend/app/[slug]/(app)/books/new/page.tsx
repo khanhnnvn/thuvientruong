@@ -4,7 +4,7 @@ import { useEffect, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { apiFetch, ApiError, unwrapList } from "@/lib/api";
+import { useApi, useSlug, ApiError, unwrapList } from "@/lib/api";
 import type { Author, Book, Category, Publisher } from "@/lib/types";
 import { RoleGate } from "@/components/RoleGate";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -22,6 +22,8 @@ export default function NewBookPage() {
 
 function NewBookForm() {
   const router = useRouter();
+  const slug = useSlug();
+  const apiFetch = useApi();
   const toast = useToast();
 
   const [categories, setCategories] = useState<Category[]>([]);
@@ -74,7 +76,7 @@ function NewBookForm() {
       }
 
       toast.success("Đã thêm sách mới vào thư viện.");
-      router.push(book?.id ? `/books/${book.id}` : "/books");
+      router.push(book?.id ? `/${slug}/books/${book.id}` : `/${slug}/books`);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Không thể thêm sách. Vui lòng thử lại.");
     } finally {
@@ -84,7 +86,7 @@ function NewBookForm() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <Link href="/books" className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:underline">
+      <Link href={`/${slug}/books`} className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:underline">
         <ArrowLeft className="h-4 w-4" /> Quay lại danh mục sách
       </Link>
 

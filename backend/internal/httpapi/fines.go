@@ -30,8 +30,8 @@ func (s *Server) listFines(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	var conds []string
-	var args []any
+	args := []any{schoolID(r)}
+	conds := []string{"school_id = $1"}
 	if userID != "" {
 		args = append(args, userID)
 		conds = append(conds, fmt.Sprintf("user_id = $%d", len(args)))
@@ -40,10 +40,7 @@ func (s *Server) listFines(w http.ResponseWriter, r *http.Request) {
 		args = append(args, status)
 		conds = append(conds, fmt.Sprintf("status = $%d", len(args)))
 	}
-	where := ""
-	if len(conds) > 0 {
-		where = "WHERE " + strings.Join(conds, " AND ")
-	}
+	where := "WHERE " + strings.Join(conds, " AND ")
 	rows, err := s.pool.Query(r.Context(), fmt.Sprintf(`SELECT %s FROM fines %s ORDER BY created_at DESC`, fineColumns, where), args...)
 	if err != nil {
 		s.internalError(w, r, err)
@@ -72,7 +69,7 @@ func (s *Server) waiveFine(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) settleFine(w http.ResponseWriter, r *http.Request, newStatus string) {
 	id := pathParam(r, "id")
-	row := s.pool.QueryRow(r.Context(), `SELECT `+fineColumns+` FROM fines WHERE id = $1`, id)
+	row := s.pool.QueryRow(r.Context(), `SELECT `+fineColumns+` FROM fines WHERE id = $1 AND school_id = $2`, id, schoolID(r))
 	f, err := scanFine(row)
 	if errors.Is(err, pgx.ErrNoRows) {
 		writeError(w, http.StatusNotFound, "not_found", "Không tìm thấy khoản phạt.")

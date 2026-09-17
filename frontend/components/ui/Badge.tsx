@@ -40,6 +40,9 @@ const STATUS_TONE: Record<string, Tone> = {
   teacher: "green",
   student: "amber",
   parent: "slate",
+  approved: "green",
+  rejected: "red",
+  suspended: "amber",
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -63,6 +66,9 @@ const STATUS_LABEL: Record<string, string> = {
   teacher: "Giáo viên",
   student: "Học sinh",
   parent: "Phụ huynh",
+  approved: "Đã duyệt",
+  rejected: "Từ chối",
+  suspended: "Tạm khoá",
 };
 
 export function StatusBadge({ status }: { status?: string | null }) {

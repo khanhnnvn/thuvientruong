@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Bell } from "lucide-react";
-import { apiFetch, unwrapList } from "@/lib/api";
+import { useApi, unwrapList } from "@/lib/api";
 import type { NotificationItem } from "@/lib/types";
 import { formatDateTime, cn } from "@/lib/utils";
 
 export function NotificationsMenu() {
+  const apiFetch = useApi();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [loaded, setLoaded] = useState(false);

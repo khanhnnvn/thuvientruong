@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Tên dự án** | Hệ thống Quản lý Thư viện Trường học (thuvientruong) |
-| **Phiên bản tài liệu** | 1.0 |
-| **Ngày ban hành** | 17/09/2026 |
+| **Phiên bản tài liệu** | 2.0 — bổ sung mô hình đa trường (multi-tenant) |
+| **Ngày ban hành** | 17/09/2026 (v1.0); cập nhật 17/09/2026 (v2.0 — chuyển sang kiến trúc multi-tenant) |
 | **Trạng thái** | Chốt để làm căn cứ phát triển MVP |
-| **Miền triển khai** | https://thuvien.vietsoftware.vn |
+| **Miền triển khai** | https://thuvien.vietsoftware.vn (mỗi trường truy cập qua đường dẫn riêng `/:slug`, ví dụ `https://thuvien.vietsoftware.vn/truong_nguyensieu`) |
 
 ---
 
@@ -14,16 +14,19 @@
 
 ### 1.1. Mục đích tài liệu
 
-Tài liệu này đặc tả đầy đủ yêu cầu chức năng và phi chức năng của Hệ thống Quản lý Thư viện Trường học, làm căn cứ thống nhất giữa các bên liên quan (nhà trường, thủ thư, đội phát triển) trong suốt vòng đời thiết kế, xây dựng, kiểm thử và nghiệm thu sản phẩm. Tài liệu được viết theo cấu trúc chuẩn kết hợp IEEE 830 và ISO/IEC/IEEE 29148, dựa trên hai tài liệu đã chốt trước đó:
+Tài liệu này đặc tả đầy đủ yêu cầu chức năng và phi chức năng của Hệ thống Quản lý Thư viện Trường học, làm căn cứ thống nhất giữa các bên liên quan (nhà trường, thủ thư, đội phát triển) trong suốt vòng đời thiết kế, xây dựng, kiểm thử và nghiệm thu sản phẩm. Tài liệu được viết theo cấu trúc chuẩn kết hợp IEEE 830 và ISO/IEC/IEEE 29148, dựa trên các tài liệu đã chốt trước đó:
 
 - `docs/API.md` — hợp đồng API (API contract) giữa frontend và backend.
 - `backend/migrations/0001_init.sql` — lược đồ cơ sở dữ liệu PostgreSQL khởi tạo.
+- `docs/MULTI_TENANT_SPEC.md` — đặc tả kỹ thuật việc chuyển đổi hệ thống sang mô hình đa trường (multi-tenant), là nguồn nội dung cho các yêu cầu đa trường bổ sung trong bản cập nhật v2.0 của tài liệu này.
 
-Mọi yêu cầu trong tài liệu này phải nhất quán với hai tài liệu trên; khi có khác biệt, API.md và schema DB là nguồn chân lý (source of truth) về mặt kỹ thuật, còn tài liệu này bổ sung ngữ cảnh nghiệp vụ, quy tắc, tiêu chí chấp nhận mà hai tài liệu kia không nêu chi tiết.
+Mọi yêu cầu trong tài liệu này phải nhất quán với các tài liệu trên; khi có khác biệt, API.md, schema DB và MULTI_TENANT_SPEC.md là nguồn chân lý (source of truth) về mặt kỹ thuật, còn tài liệu này bổ sung ngữ cảnh nghiệp vụ, quy tắc, tiêu chí chấp nhận mà các tài liệu kia không nêu chi tiết.
+
+**Ghi chú phiên bản 2.0**: Kể từ bản cập nhật này, hệ thống chuyển từ mô hình phục vụ một trường duy nhất sang mô hình **đa trường (multi-tenant)** — một instance hệ thống phục vụ đồng thời nhiều trường học độc lập, mỗi trường truy cập qua một đường dẫn riêng dạng `/:slug` (ví dụ `/truong_nguyensieu`), có cách ly dữ liệu theo trường, và có thêm vai trò `super_admin` ở cấp toàn hệ thống để duyệt đăng ký trường mới. Các mục liên quan đã được cập nhật trực tiếp trong tài liệu; nội dung không liên quan đến đa trường được giữ nguyên như bản v1.0.
 
 ### 1.2. Phạm vi dự án
 
-Hệ thống là một ứng dụng web quản lý toàn bộ hoạt động nghiệp vụ của thư viện trong một trường học (phổ thông), bao gồm:
+Hệ thống là một ứng dụng web quản lý toàn bộ hoạt động nghiệp vụ của thư viện trong một trường học (phổ thông), triển khai theo mô hình **đa trường (multi-tenant)**: một instance hệ thống duy nhất phục vụ đồng thời nhiều trường học độc lập, mỗi trường (tenant) có dữ liệu tách biệt hoàn toàn và được truy cập qua một đường dẫn riêng theo `slug` của trường (ví dụ `/truong_nguyensieu`). Phạm vi nghiệp vụ trong một trường bao gồm:
 
 - Quản lý danh mục đầu sách/ấn phẩm (sách, tạp chí, báo, luận văn...) và các bản sao vật lý của từng đầu sách.
 - Quản lý quy trình mượn — trả — gia hạn — đặt trước sách giữa thủ thư và người đọc (giáo viên, học sinh).
@@ -32,6 +35,8 @@ Hệ thống là một ứng dụng web quản lý toàn bộ hoạt động ngh
 - Thông báo nhắc hạn trả và thông báo sách đặt trước đã sẵn sàng.
 - Báo cáo thống kê phục vụ công tác quản lý của nhà trường và thủ thư.
 - Cổng thông tin cho phụ huynh theo dõi tình trạng mượn/phạt của con em.
+
+Ngoài phạm vi nghiệp vụ trong một trường nêu trên, hệ thống còn có một lớp quản lý **liên trường (cross-tenant)** dành cho vai trò `super_admin`, bao gồm: tiếp nhận đăng ký trường mới qua form công khai, phê duyệt/từ chối/tạm khoá/mở lại trường, và đảm bảo cách ly dữ liệu tuyệt đối giữa các trường (xem mục 3.10, 4.9, 6.3, 7.5–7.9).
 
 **Ngoài phạm vi (out of scope) của phiên bản MVP**: mượn sách tự phục vụ qua máy quét mã vạch/QR không cần thủ thư thao tác, gửi SMS/email thực tế (chỉ có thông báo trong hệ thống — in-app), ứng dụng di động riêng, tích hợp thanh toán trực tuyến cho phạt, tích hợp với hệ thống quản lý học sinh (SIS) của trường. Các hạng mục này được liệt kê ở mục 10 — Lộ trình phát triển tương lai.
 
@@ -56,8 +61,13 @@ Hệ thống được triển khai trên một máy macOS cá nhân đặt tại
 | launchd | Trình quản lý tiến trình nền (daemon/service) mặc định của macOS, dùng để tự khởi chạy và giám sát ứng dụng |
 | pgx | Thư viện driver PostgreSQL hiệu năng cao cho ngôn ngữ Go |
 | copy_code | Mã vạch/số đăng ký cá biệt định danh duy nhất một bản sao vật lý |
+| Multi-tenant (đa trường/đa khách hàng) | Mô hình kiến trúc trong đó một instance phần mềm duy nhất phục vụ đồng thời nhiều khách hàng (ở đây là nhiều trường học) độc lập với nhau, có cách ly dữ liệu giữa các khách hàng |
+| Tenant | Một đơn vị khách hàng độc lập trong mô hình multi-tenant; trong hệ thống này, mỗi **trường học** (bảng `schools`) là một tenant |
+| Slug | Chuỗi định danh duy nhất, dễ đọc, dùng làm phần đường dẫn URL đại diện cho một trường (ví dụ `truong_nguyensieu`), do trường tự chọn khi đăng ký |
+| `super_admin` | Vai trò quản trị cấp toàn hệ thống, không thuộc trường nào (`school_id = NULL`), có quyền duyệt/từ chối/khoá/mở khoá trường; khác với vai trò `admin` (quản trị ở cấp một trường cụ thể) |
+| Tenant isolation (cách ly dữ liệu đa khách hàng) | Nguyên tắc bảo đảm dữ liệu của một trường không thể bị truy cập, hiển thị hay ghi đè bởi người dùng/phiên làm việc thuộc trường khác |
 
-Các vai trò người dùng dùng xuyên suốt tài liệu, theo đúng `user_role` trong schema: `admin`, `librarian`, `teacher`, `student`, `parent`.
+Các vai trò người dùng dùng xuyên suốt tài liệu, theo đúng `user_role` trong schema: `admin`, `librarian`, `teacher`, `student`, `parent`, và kể từ v2.0 bổ sung thêm `super_admin` (vai trò cấp hệ thống, xem mục 2.2).
 
 ### 1.4. Tài liệu tham chiếu
 
@@ -65,6 +75,7 @@ Các vai trò người dùng dùng xuyên suốt tài liệu, theo đúng `user_
 2. `backend/migrations/0001_init.sql` — Schema cơ sở dữ liệu PostgreSQL khởi tạo (đã chốt).
 3. IEEE Std 830-1998 — Recommended Practice for Software Requirements Specifications.
 4. ISO/IEC/IEEE 29148:2018 — Systems and software engineering — Life cycle processes — Requirements engineering.
+5. `docs/MULTI_TENANT_SPEC.md` — Đặc tả chuyển đổi kiến trúc sang mô hình đa trường (multi-tenant) (đã chốt).
 
 ---
 
@@ -73,6 +84,8 @@ Các vai trò người dùng dùng xuyên suốt tài liệu, theo đúng `user_
 ### 2.1. Bối cảnh hệ thống
 
 Thư viện trường học hiện quản lý sách và quá trình mượn/trả theo cách thủ công hoặc bằng bảng tính rời rạc, dẫn đến khó khăn trong việc: tra cứu sách còn hay đã hết, theo dõi ai đang mượn sách gì và có trễ hạn hay không, tính toán phạt, và cung cấp thông tin cho phụ huynh. Hệ thống mới số hóa toàn bộ nghiệp vụ trên vào một ứng dụng web tập trung, vận hành nội bộ trong phạm vi trường nhưng có thể truy cập từ xa qua Internet (ví dụ phụ huynh xem tình trạng con em tại nhà).
+
+Kể từ v2.0, hệ thống được thiết kế lại để một instance duy nhất có thể phục vụ **nhiều trường học khác nhau cùng lúc** thay vì chỉ một trường như trước, nhằm giảm chi phí triển khai/vận hành khi nhân rộng ra nhiều trường: mỗi trường đăng ký sử dụng độc lập, được cấp một đường dẫn riêng theo `slug`, dữ liệu tách biệt hoàn toàn với các trường khác, và việc cấp phép sử dụng cho trường mới do một vai trò quản trị toàn hệ thống (`super_admin`) đảm nhiệm.
 
 Hệ thống gồm ba lớp chính:
 - **Frontend**: ứng dụng Next.js (App Router, TypeScript, Tailwind CSS) — giao diện người dùng, chạy trên cổng 3400.
@@ -83,29 +96,35 @@ Toàn bộ được triển khai trên một máy macOS cá nhân, các tiến t
 
 ### 2.2. Đối tượng sử dụng và vai trò
 
-Hệ thống có 5 vai trò người dùng, ánh xạ trực tiếp với kiểu liệt kê `user_role` trong CSDL. Bảng dưới đây tổng hợp mô tả nghiệp vụ và quyền hạn (chi tiết quyền theo API xem bảng phân quyền cuối `docs/API.md`):
+Hệ thống có 6 vai trò người dùng kể từ v2.0 (5 vai trò trong phạm vi một trường + 1 vai trò cấp toàn hệ thống mới), ánh xạ trực tiếp với kiểu liệt kê `user_role` trong CSDL. Bảng dưới đây tổng hợp mô tả nghiệp vụ và quyền hạn (chi tiết quyền theo API xem bảng phân quyền cuối `docs/API.md`):
 
 | Vai trò | Đại diện cho | Mô tả vai trò trong hệ thống |
 |---|---|---|
-| `admin` | Nhà trường / Quản trị hệ thống | Toàn quyền: quản lý tài khoản người dùng (tạo/sửa/khoá, đặt lại mật khẩu, liên kết phụ huynh–học sinh), toàn quyền trên danh mục và sách, xem toàn bộ báo cáo, duyệt miễn phạt |
+| `super_admin` | **Quản trị hệ thống toàn cục** (không thuộc trường nào) | Vai trò cấp hệ thống, `school_id = NULL`, không đăng nhập theo `/:slug/...` mà có luồng đăng nhập riêng tại `/super-admin`. Duyệt/từ chối/tạm khoá/mở lại đăng ký trường mới; xem danh sách toàn bộ các trường trong hệ thống. **Không** thao tác lên dữ liệu nghiệp vụ (sách, mượn/trả, phạt...) của bất kỳ trường nào — phạm vi quyền hạn tách biệt hoàn toàn với `admin` |
+| `admin` | Nhà trường (quản trị ở cấp 1 trường) | Toàn quyền **trong phạm vi trường của mình**: quản lý tài khoản người dùng (tạo/sửa/khoá, đặt lại mật khẩu, liên kết phụ huynh–học sinh), toàn quyền trên danh mục và sách, xem toàn bộ báo cáo, duyệt miễn phạt. Là vai trò được tạo tự động khi trường đăng ký sử dụng phần mềm (xem FR-37) |
 | `librarian` | Thủ thư | Vận hành nghiệp vụ hằng ngày: quản lý đầu sách và bản sao, xử lý mượn/trả/gia hạn/đặt trước, thu và miễn phạt, tạo tài khoản học sinh/giáo viên, xem báo cáo |
 | `teacher` | Giáo viên | Tra cứu danh mục sách, tự đặt trước sách, xem lịch sử mượn/phạt của bản thân, nhận thông báo |
 | `student` | Học sinh | Tra cứu danh mục sách, tự đặt trước sách, xem lịch sử mượn/phạt của bản thân, nhận thông báo |
 | `parent` | Phụ huynh | Chỉ xem: tra cứu danh mục sách (read-only), xem tình trạng mượn/phạt của (các) con đã được liên kết, không thao tác mượn/trả/đặt trước |
 
-Một người dùng chỉ có duy nhất một vai trò (trường `role` trong bảng `users`). Quan hệ phụ huynh–học sinh là nhiều–nhiều, lưu trong bảng `parent_links` (một phụ huynh có thể theo dõi nhiều con; một học sinh về lý thuyết có thể được nhiều phụ huynh theo dõi).
+**Lưu ý quan trọng — phân biệt `super_admin` và `admin`**: đây là hai vai trò khác cấp độ, không phải quan hệ "cao hơn/thấp hơn" trong cùng một trường. `admin` là quản trị **của một trường cụ thể**, luôn có `school_id` xác định, chỉ thấy và thao tác dữ liệu của đúng trường mình. `super_admin` là quản trị **của chính nền tảng/hệ thống**, không gắn với trường nào (`school_id = NULL`), chỉ thấy dữ liệu về danh sách trường (bảng `schools`) để phục vụ việc duyệt/quản lý cấp phép sử dụng, không truy cập được vào dữ liệu nghiệp vụ (sách, người mượn, phạt...) bên trong từng trường.
+
+Một người dùng chỉ có duy nhất một vai trò (trường `role` trong bảng `users`). Quan hệ phụ huynh–học sinh là nhiều–nhiều, lưu trong bảng `parent_links` (một phụ huynh có thể theo dõi nhiều con; một học sinh về lý thuyết có thể được nhiều phụ huynh theo dõi). Tài khoản `super_admin` là tài khoản duy nhất trong toàn hệ thống, được khởi tạo (seed) thủ công lúc triển khai, không có giao diện tự đăng ký.
 
 ### 2.3. Ràng buộc chung
 
 - Ngôn ngữ giao diện: tiếng Việt duy nhất trong MVP.
 - Xác thực bắt buộc cho mọi chức năng trừ đăng nhập; không có luồng đăng ký tự do — tài khoản được `admin` hoặc `librarian` khởi tạo.
 - Mỗi học sinh có `max_borrow` (mặc định 3) là số bản sao tối đa được mượn cùng lúc.
-- Hệ thống chỉ quản lý một thư viện của một trường (không hỗ trợ multi-tenant trong MVP).
-- Toàn bộ thao tác ghi dữ liệu nghiệp vụ quan trọng phải được ghi vào `audit_logs`.
+- **[Cập nhật v2.0]** Hệ thống vận hành theo mô hình **đa trường (multi-tenant)**: một instance phục vụ nhiều trường học độc lập, mỗi trường có dữ liệu cách ly hoàn toàn với các trường khác (xem mục 3.10, 4.9). Trong phạm vi một trường, các ràng buộc và quy tắc nghiệp vụ ở mục 3.1–3.9 vẫn giữ nguyên như trước, không đổi.
+- Không có luồng đăng ký tài khoản người dùng cá nhân tự do trong phạm vi một trường (tài khoản vẫn do `admin`/`librarian` của trường đó khởi tạo); tuy nhiên có luồng đăng ký **trường mới** (self-service, công khai) do người đại diện nhà trường thực hiện, cần `super_admin` phê duyệt trước khi sử dụng được (xem FR-37).
+- Toàn bộ thao tác ghi dữ liệu nghiệp vụ quan trọng phải được ghi vào `audit_logs`, kèm đúng `school_id` của trường phát sinh thao tác đó.
 
 ### 2.4. Giả định và phụ thuộc
 
 - Nhà trường cung cấp danh sách học sinh/giáo viên ban đầu (nhập tay hoặc import) để `admin`/`librarian` tạo tài khoản.
+- Mỗi trường tự chịu trách nhiệm về tính chính xác của thông tin đăng ký (tên trường, slug, thông tin liên hệ, tài khoản `admin` đầu tiên); `super_admin` chỉ xác minh tính hợp lệ ở mức nghiệp vụ cơ bản trước khi phê duyệt, không xác minh pháp lý/giấy phép trường học.
+- Slug của trường, một khi đã được duyệt và có dữ liệu người dùng sử dụng, không nên đổi tuỳ tiện vì ảnh hưởng tới đường dẫn truy cập mà người dùng đã quen thuộc (đổi slug là thao tác hiếm, thuộc phạm vi vận hành đặc biệt, không có trong MVP).
 - Máy chủ triển khai (macOS cá nhân) có kết nối Internet ổn định và luôn bật (hoặc được đánh thức định kỳ) để duy trì Cloudflare Tunnel.
 - Đã cài đặt sẵn PostgreSQL, Go runtime, Node.js/Next.js build tooling, và `cloudflared` trên máy triển khai.
 - Không có yêu cầu tuân thủ pháp lý đặc thù ngoài bảo vệ thông tin cá nhân học sinh ở mức hợp lý cho môi trường giáo dục nội bộ (không xử lý dữ liệu thanh toán thật, không yêu cầu chuẩn PCI-DSS).
@@ -383,6 +402,76 @@ Mỗi yêu cầu chức năng (FR) trình bày theo mẫu: **Mã, Mô tả, Acto
 - **Actor**: `parent`.
 - **Quy tắc nghiệp vụ**: Dùng chung API tìm kiếm sách (FR-10) nhưng không hiển thị/không cho gọi các thao tác ghi (mượn, đặt trước) — nếu cố gọi, backend trả 403.
 
+### 3.10. Module: Quản lý đa trường (Multi-tenant) — bổ sung v2.0
+
+Các yêu cầu dưới đây bổ sung theo `docs/MULTI_TENANT_SPEC.md`, áp dụng ở lớp liên trường (cross-tenant), tách biệt với nghiệp vụ trong một trường ở các mục 3.1–3.9.
+
+#### FR-37 — Đăng ký trường mới (self-service qua form công khai)
+- **Mô tả**: Người đại diện một trường học đăng ký sử dụng phần mềm cho trường mình thông qua một form công khai, không cần đăng nhập trước.
+- **Actor**: Khách vãng lai (người đại diện nhà trường, chưa có tài khoản).
+- **Đầu vào**: `POST /api/v1/schools/register` `{school_name, slug, address?, contact_phone?, contact_email?, admin_full_name, admin_email, admin_password}`. Trước khi nhập slug, có thể gọi `GET /api/v1/schools/check-slug?slug=` để kiểm tra slug còn trống.
+- **Đầu ra**: HTTP 201 kèm thông báo "Đã gửi đăng ký, chờ quản trị hệ thống phê duyệt"; **không** trả `access_token`/`refresh_token` ở bước này.
+- **Quy tắc nghiệp vụ**:
+  - Backend tạo đồng thời trong một transaction: 1 bản ghi `schools` với `status='pending'`, và 1 bản ghi `users` (role=`admin`, `school_id` = trường vừa tạo) ứng với thông tin quản trị viên đầu tiên.
+  - `slug` phải duy nhất toàn hệ thống, chỉ gồm chữ thường, số, gạch dưới, gạch ngang (xem quy tắc đặt tên slug ở mục 8).
+  - `admin_email` chỉ cần duy nhất trong phạm vi trường mới tạo (không phải duy nhất toàn hệ thống — xem ràng buộc `UNIQUE(school_id, email)` ở mục 5.1).
+- **Tiêu chí chấp nhận**:
+  - Đăng ký với slug đã tồn tại trả lỗi 409; thiếu trường bắt buộc trả lỗi 422.
+  - Sau khi đăng ký, tài khoản `admin` vừa tạo **không đăng nhập được** cho tới khi `super_admin` phê duyệt trường (FR-38), gọi `/:slug/login` trả lỗi rõ ràng theo trạng thái `pending` (xem FR-42).
+  - Đăng ký trùng slug đang ở trạng thái `pending`/`approved`/`suspended` đều bị từ chối; chỉ khi slug đó chưa từng tồn tại hoặc đã bị `rejected` và trường quyết định đăng ký lại với slug khác mới được chấp nhận.
+
+#### FR-38 — Phê duyệt trường đăng ký
+- **Mô tả**: `super_admin` xem danh sách trường đang chờ duyệt và phê duyệt cho trường được phép sử dụng hệ thống.
+- **Actor**: `super_admin`.
+- **Đầu vào**: `GET /api/v1/super-admin/schools?status=&q=&page=`, `GET /api/v1/super-admin/schools/:id`, `POST /api/v1/super-admin/schools/:id/approve`.
+- **Quy tắc nghiệp vụ**: Chỉ chuyển được từ `status='pending'` sang `status='approved'`; ghi nhận `approved_by` (chính `super_admin` thực hiện) và `approved_at`.
+- **Tiêu chí chấp nhận**: Sau khi duyệt, tài khoản `admin` của trường đó đăng nhập được ngay tại `/:slug/login`; duyệt một trường không ở trạng thái `pending` (ví dụ đã `approved` hoặc `rejected`) trả lỗi 409.
+
+#### FR-39 — Từ chối trường đăng ký
+- **Mô tả**: `super_admin` từ chối một trường đang chờ duyệt, kèm lý do.
+- **Actor**: `super_admin`.
+- **Đầu vào**: `POST /api/v1/super-admin/schools/:id/reject` `{reason}`.
+- **Quy tắc nghiệp vụ**: Chỉ áp dụng cho trường đang `status='pending'`; lưu `rejection_reason`; chuyển `status='rejected'`.
+- **Tiêu chí chấp nhận**: Trường bị từ chối không đăng nhập được ở `/:slug/login`, thông báo lỗi hiển thị đúng lý do từ chối (nếu có) hoặc thông báo chung "Đăng ký đã bị từ chối".
+
+#### FR-40 — Tạm khoá trường đã duyệt
+- **Mô tả**: `super_admin` tạm khoá một trường đang hoạt động (ví dụ vi phạm điều khoản sử dụng, nợ phí dịch vụ...).
+- **Actor**: `super_admin`.
+- **Đầu vào**: `POST /api/v1/super-admin/schools/:id/suspend`.
+- **Quy tắc nghiệp vụ**: Chỉ áp dụng cho trường đang `status='approved'`; chuyển `status='suspended'`. Toàn bộ dữ liệu của trường được giữ nguyên, không xoá.
+- **Tiêu chí chấp nhận**: Ngay sau khi khoá, mọi phiên đăng nhập hiện có của user thuộc trường đó bị từ chối ở lần gọi API kế tiếp (401/403 kèm lý do `school_not_approved`/trạng thái `suspended`); đăng nhập mới tại `/:slug/login` bị chặn.
+
+#### FR-41 — Mở lại trường đã bị tạm khoá
+- **Mô tả**: `super_admin` mở lại quyền truy cập cho một trường đang bị tạm khoá.
+- **Actor**: `super_admin`.
+- **Đầu vào**: `POST /api/v1/super-admin/schools/:id/reactivate`.
+- **Quy tắc nghiệp vụ**: Chỉ áp dụng cho trường đang `status='suspended'`; chuyển lại `status='approved'`.
+- **Tiêu chí chấp nhận**: Sau khi mở lại, người dùng của trường đăng nhập lại được bình thường tại `/:slug/login` mà không mất dữ liệu đã có trước khi bị khoá.
+
+#### FR-42 — Cách ly dữ liệu theo trường (tenant isolation)
+- **Mô tả**: Mỗi trường chỉ có thể xem, tạo, sửa, xoá dữ liệu nghiệp vụ thuộc chính trường mình; không có bất kỳ đường nào (kể cả gián tiếp qua tham số truy vấn) để một trường nhìn thấy hoặc thao tác dữ liệu của trường khác.
+- **Actor**: Hệ thống (thực thi tự động ở tầng backend cho mọi request thuộc phạm vi trường).
+- **Đầu vào/Quy tắc nghiệp vụ**:
+  - Mọi endpoint nghiệp vụ theo trường nằm dưới prefix `/api/v1/:slug/...`; middleware tra `schools` theo `:slug`, nạp `school_id` tương ứng vào context xử lý request.
+  - JWT của user mang `school_id` của trường mà user đó thuộc về; nếu `school_id` trong JWT khác `school_id` suy ra từ `:slug` đang truy cập, request bị từ chối với 403 (chống truy cập chéo trường bằng token hợp lệ nhưng sai trường).
+  - Mọi câu truy vấn đọc/ghi ở tầng backend đối với các bảng có cột `school_id` (xem danh sách ở mục 5.1) đều phải lọc/gán theo đúng `school_id` trong context, không được phép truy vấn không điều kiện `school_id` đối với dữ liệu nghiệp vụ.
+- **Tiêu chí chấp nhận**:
+  - Kiểm thử tạo 2 trường (A, B) với dữ liệu sách/mượn/phạt riêng biệt: user của trường A không thể, bằng bất kỳ thao tác nào trên giao diện hay gọi API trực tiếp, xem/sửa/xoá được bản ghi thuộc trường B, kể cả khi biết chính xác `id` của bản ghi đó (trả 403/404 tuỳ ngữ cảnh, không rò rỉ sự tồn tại của dữ liệu trường khác).
+  - Gọi API với `:slug` của trường A nhưng JWT thuộc trường B bị từ chối 403.
+
+#### FR-43 — Đăng nhập theo slug trường và chặn đăng nhập theo trạng thái trường
+- **Mô tả**: Người dùng đăng nhập vào đúng ngữ cảnh trường của mình thông qua đường dẫn có `slug`; hệ thống chặn đăng nhập nếu trường chưa được duyệt, bị từ chối, hoặc đang bị khoá.
+- **Actor**: Tất cả vai trò thuộc một trường (`admin`, `librarian`, `teacher`, `student`, `parent`).
+- **Đầu vào**: `POST /api/v1/:slug/auth/login` `{email, password}` (frontend tương ứng tại route `/:slug/login`).
+- **Quy tắc nghiệp vụ**:
+  - Middleware tra `schools` theo `:slug` trước khi xử lý đăng nhập: không tìm thấy slug → 404 `school_not_found`; tìm thấy nhưng `status != 'approved'` → 403 `school_not_approved` kèm giá trị `status` thực tế (`pending`/`rejected`/`suspended`) để frontend hiển thị thông báo phù hợp cho từng trường hợp.
+  - Chỉ khi `schools.status = 'approved'`, hệ thống mới tiếp tục kiểm tra `email`/`password` như FR-01.
+  - `access_token`/JWT phát hành sau khi đăng nhập thành công phải mang theo `school_id`, dùng để đối chiếu ở FR-42 cho các request tiếp theo.
+- **Tiêu chí chấp nhận**:
+  - Đăng nhập vào slug không tồn tại trả 404 rõ ràng, không lộ thông tin hệ thống nội bộ.
+  - Đăng nhập vào trường `pending` trả thông báo "Trường đang chờ phê duyệt"; trường `rejected` trả "Đăng ký đã bị từ chối"; trường `suspended` trả "Trường đang tạm khoá, vui lòng liên hệ quản trị hệ thống" — không trường hợp nào cấp token.
+  - Đăng nhập đúng email/password vào một trường `approved` hoạt động đúng như FR-01 hiện có, không thay đổi hành vi nghiệp vụ trong phạm vi trường.
+
 ---
 
 ## 4. Yêu cầu phi chức năng
@@ -429,34 +518,59 @@ Mỗi yêu cầu chức năng (FR) trình bày theo mẫu: **Mã, Mô tả, Acto
 - **NFR-25**: Không thu thập thông tin cá nhân nhạy cảm ngoài phạm vi cần thiết cho nghiệp vụ thư viện (không thu thập thông tin sức khoẻ, tài chính, v.v.).
 - **NFR-26**: Dữ liệu sao lưu (backup) phải được lưu trữ với quyền truy cập hạn chế (chỉ tài khoản quản trị hệ thống trên máy macOS triển khai).
 
+### 4.9. Đa trường (Multi-tenant) — bổ sung v2.0
+
+- **NFR-27 (Cách ly dữ liệu đa khách hàng — tenant isolation)**: Hệ thống phải đảm bảo tuyệt đối không rò rỉ dữ liệu chéo trường ở mọi tầng (API, truy vấn DB, cache nếu có). Mọi bảng có cột `school_id` (mục 5.1) phải được lọc theo `school_id` của ngữ cảnh request hiện tại ở tầng backend — không dựa vào frontend để ẩn/hiện dữ liệu. Đây là yêu cầu bảo mật ở mức nghiêm trọng nhất của phiên bản đa trường: một lỗi cách ly dữ liệu (ví dụ thiếu điều kiện `WHERE school_id = ...`) được coi là lỗ hổng bảo mật nghiêm trọng (tương đương mức ưu tiên cao nhất khi phát hiện), không phải lỗi chức năng thông thường. Kiểm thử bảo mật trước khi bàn giao bắt buộc phải bao gồm kịch bản cố tình truy cập chéo trường (đổi `:slug`, đổi `id` bản ghi của trường khác) và xác nhận bị từ chối đúng cách.
+- **NFR-28 (Khả năng mở rộng theo số lượng trường)**: Kiến trúc dữ liệu và API phải cho phép tăng số lượng trường (tenant) theo thời gian mà không cần thay đổi cấu trúc bảng hoặc endpoint (chỉ cần thêm bản ghi `schools` mới và dữ liệu tương ứng gắn `school_id`). Các chỉ mục phục vụ truy vấn lọc theo `school_id` (xem mục 5.3) phải được thiết kế để truy vấn trong phạm vi một trường không suy giảm hiệu năng đáng kể khi tổng số trường trong hệ thống tăng lên (ví dụ hàng chục đến hàng trăm trường), đảm bảo NFR-01/NFR-02 vẫn được đáp ứng cho từng trường độc lập với số lượng trường khác đang tồn tại trong hệ thống.
+
 ---
 
 ## 5. Mô hình dữ liệu tóm tắt
 
-Toàn bộ định nghĩa bảng chi tiết nằm tại `backend/migrations/0001_init.sql`. Phần dưới tóm tắt các bảng chính và quan hệ.
+Toàn bộ định nghĩa bảng chi tiết nằm tại `backend/migrations/0001_init.sql` (schema gốc) và migration bổ sung theo `docs/MULTI_TENANT_SPEC.md` (schema đa trường, đánh số tiếp theo `0001_init.sql`). Phần dưới tóm tắt các bảng chính và quan hệ, đã cập nhật cho v2.0.
 
 ### 5.1. Danh sách bảng chính
 
 | Bảng | Vai trò trong nghiệp vụ | Khoá ngoại chính |
 |---|---|---|
-| `users` | Tài khoản người dùng, 5 vai trò | — |
+| `schools` **(bảng mới v2.0)** | Danh sách trường (tenant) đăng ký sử dụng hệ thống, gồm `slug`, `name`, `status` (`pending`/`approved`/`rejected`/`suspended`), `rejection_reason`, `approved_by`, `approved_at` | `approved_by` → `users.id` (tài khoản `super_admin` đã duyệt) |
+| `users` | Tài khoản người dùng, 6 vai trò (kể cả `super_admin`) | `school_id` → `schools.id` (**NULLABLE**, chỉ NULL khi `role='super_admin'`) |
 | `parent_links` | Liên kết phụ huynh–học sinh (N–N) | `parent_id`, `student_id` → `users.id` |
-| `publishers` | Danh mục nhà xuất bản | — |
-| `authors` | Danh mục tác giả | — |
-| `categories` | Danh mục thể loại, cây phân cấp | `parent_id` → `categories.id` |
-| `books` | Đầu sách/ấn phẩm | `publisher_id`, `category_id`, `created_by` |
+| `publishers` | Danh mục nhà xuất bản | `school_id` → `schools.id` **(cột mới v2.0, NOT NULL)** |
+| `authors` | Danh mục tác giả | `school_id` → `schools.id` **(cột mới v2.0, NOT NULL)** |
+| `categories` | Danh mục thể loại, cây phân cấp | `parent_id` → `categories.id`; `school_id` → `schools.id` **(cột mới v2.0, NOT NULL)** |
+| `books` | Đầu sách/ấn phẩm | `publisher_id`, `category_id`, `created_by`; `school_id` → `schools.id` **(cột mới v2.0, NOT NULL)** |
 | `book_authors` | Quan hệ N–N sách–tác giả | `book_id`, `author_id` |
-| `book_copies` | Bản sao vật lý của đầu sách | `book_id` |
-| `borrow_records` | Giao dịch mượn/trả | `copy_id`, `user_id`, `approved_by` |
-| `reservations` | Đặt trước sách | `book_id`, `user_id` |
-| `fines` | Khoản phạt | `borrow_record_id`, `user_id` |
-| `notifications` | Thông báo trong hệ thống | `user_id` |
-| `audit_logs` | Nhật ký kiểm toán | `user_id` |
+| `book_copies` | Bản sao vật lý của đầu sách | `book_id`; `school_id` → `schools.id` **(cột mới v2.0, NOT NULL)** |
+| `borrow_records` | Giao dịch mượn/trả | `copy_id`, `user_id`, `approved_by`; `school_id` → `schools.id` **(cột mới v2.0, NOT NULL)** |
+| `reservations` | Đặt trước sách | `book_id`, `user_id`; `school_id` → `schools.id` **(cột mới v2.0, NOT NULL)** |
+| `fines` | Khoản phạt | `borrow_record_id`, `user_id`; `school_id` → `schools.id` **(cột mới v2.0, NOT NULL)** |
+| `notifications` | Thông báo trong hệ thống | `user_id`; `school_id` → `schools.id` **(cột mới v2.0, NOT NULL)** |
+| `audit_logs` | Nhật ký kiểm toán | `user_id`; `school_id` → `schools.id` **(cột mới v2.0, NOT NULL)** |
+
+**Ràng buộc duy nhất được điều chỉnh theo phạm vi trường (v2.0)**:
+- `users.email`: trước đây `UNIQUE` toàn cục → nay `UNIQUE(school_id, email)` cho user thường (mỗi trường có thể có user trùng email với trường khác, nhưng không trùng trong cùng trường), và một `UNIQUE` riêng theo `email` chỉ áp dụng cho `role='super_admin'` (partial unique index).
+- `publishers.name`: trước đây `UNIQUE` toàn cục → nay `UNIQUE(school_id, name)`.
+- `book_copies.copy_code`: trước đây `UNIQUE` toàn cục → nay `UNIQUE(school_id, copy_code)` (mỗi trường tự quản lý mã vạch/số đăng ký riêng, không xung đột với trường khác).
+- `schools.slug`: `UNIQUE` toàn hệ thống (không theo trường, vì slug chính là định danh phân biệt các trường với nhau).
 
 ### 5.2. Sơ đồ ER (Mermaid)
 
 ```mermaid
 erDiagram
+    SCHOOLS ||--o{ USERS : "school_id (NULL neu super_admin)"
+    SCHOOLS ||--o{ PUBLISHERS : "school_id"
+    SCHOOLS ||--o{ AUTHORS : "school_id"
+    SCHOOLS ||--o{ CATEGORIES : "school_id"
+    SCHOOLS ||--o{ BOOKS : "school_id"
+    SCHOOLS ||--o{ BOOK_COPIES : "school_id"
+    SCHOOLS ||--o{ BORROW_RECORDS : "school_id"
+    SCHOOLS ||--o{ RESERVATIONS : "school_id"
+    SCHOOLS ||--o{ FINES : "school_id"
+    SCHOOLS ||--o{ NOTIFICATIONS : "school_id"
+    SCHOOLS ||--o{ AUDIT_LOGS : "school_id"
+    USERS ||--o{ SCHOOLS : "approved_by (super_admin)"
+
     USERS ||--o{ PARENT_LINKS : "parent_id"
     USERS ||--o{ PARENT_LINKS : "student_id"
     USERS ||--o{ BORROW_RECORDS : "user_id (nguoi muon)"
@@ -487,6 +601,13 @@ erDiagram
 - `reservations` gắn với `book_id` (đầu sách), không gắn trực tiếp với một `book_copies` cụ thể — vì người đặt trước không quan tâm bản sao nào, chỉ cần một bản sao bất kỳ của đầu sách đó.
 - `fines.borrow_record_id` có thể NULL trong trường hợp phạt không phát sinh trực tiếp từ một giao dịch mượn cụ thể còn tồn tại (ví dụ dữ liệu lịch sử), nhưng luôn có `fines.user_id` để xác định người chịu trách nhiệm.
 - Các chỉ mục (`idx_books_title`, `idx_book_copies_book_id`, `idx_book_copies_status`, `idx_borrow_records_user_id`, `idx_borrow_records_status`, `idx_reservations_book_id`, `idx_fines_user_id`) được thiết kế sẵn để tối ưu các truy vấn tìm kiếm và lọc phổ biến nêu ở mục 3 và mục 4.1.
+
+**Ghi chú bổ sung v2.0 — mô hình đa trường**:
+- `schools` là bảng gốc của mô hình tenant: mỗi bản ghi đại diện một trường, có `slug` duy nhất toàn hệ thống và `status` xác định trường đã được phép sử dụng hệ thống hay chưa (`pending`/`approved`/`rejected`/`suspended`).
+- Cột `school_id` được thêm vào tất cả các bảng dữ liệu nghiệp vụ (`users`, `categories`, `authors`, `publishers`, `books`, `book_copies`, `borrow_records`, `reservations`, `fines`, `notifications`, `audit_logs`) — đúng theo danh sách tại mục 3 của `docs/MULTI_TENANT_SPEC.md`. Riêng `users.school_id` là **NULLABLE**, với ràng buộc `CHECK`: `(role = 'super_admin' AND school_id IS NULL) OR (role <> 'super_admin' AND school_id IS NOT NULL)`; các bảng còn lại có `school_id NOT NULL` sau khi backfill dữ liệu cũ.
+- `user_role` (kiểu enum) được bổ sung giá trị `super_admin` bằng `ALTER TYPE ... ADD VALUE`, thực hiện ở một statement/migration riêng, tách khỏi statement dùng giá trị đó trong cùng transaction (do giới hạn của PostgreSQL).
+- Dữ liệu hiện có trước khi nâng cấp lên v2.0 được backfill vào một trường mặc định (`slug='truong-demo'`, `status='approved'`) trước khi áp ràng buộc `NOT NULL` trên cột `school_id`, đảm bảo không mất dữ liệu trong quá trình migrate.
+- Nên bổ sung chỉ mục có `school_id` làm cột dẫn đầu (hoặc kết hợp) cho các bảng lớn thường truy vấn theo trường (ví dụ `(school_id, status)` trên `book_copies`, `(school_id, user_id)` trên `borrow_records`) để đáp ứng NFR-28.
 
 ---
 
@@ -539,8 +660,21 @@ erDiagram
 - **Cloudflare Tunnel (`cloudflared`)**: chạy như một tiến trình nền trên macOS, thiết lập kết nối outbound tới Cloudflare, ánh xạ domain công khai `thuvien.vietsoftware.vn` tới `localhost:3400` (frontend). Không cần mở port trên router/firewall của mạng nội bộ, giảm bề mặt tấn công.
 - **Next.js Frontend (cổng 3400)**: server-side rendering/App Router phục vụ giao diện; gọi Go API qua REST/JSON, gắn kèm access token trong header `Authorization: Bearer`. Chịu trách nhiệm hiển thị theo vai trò (ẩn/hiện chức năng dựa trên `role` trả về từ `/me`), nhưng **không** được xem là lớp bảo mật chính — mọi kiểm soát quyền thực sự nằm ở backend.
 - **Go Backend API (cổng 8190)**: xử lý xác thực JWT, áp dụng RBAC theo bảng phân quyền, thực thi toàn bộ logic nghiệp vụ (mượn/trả, phạt, đặt trước...), giao tiếp CSDL qua `pgx`. Tổ chức router theo module domain (auth, users, catalog, books, copies, borrow, reservations, fines, notifications, reports) theo phong cách dự án "bvote" đã dùng trước đây trong tổ chức.
-- **PostgreSQL (database `thuvien`)**: lưu trữ toàn bộ dữ liệu bền vững theo schema tại `backend/migrations/0001_init.sql`.
+- **PostgreSQL (database `thuvien`)**: lưu trữ toàn bộ dữ liệu bền vững theo schema tại `backend/migrations/0001_init.sql` và migration bổ sung đa trường.
 - **launchd**: mỗi thành phần (frontend, backend, cloudflared) có một LaunchAgent/LaunchDaemon `.plist` riêng, cấu hình `RunAtLoad=true` và `KeepAlive=true` để tự khởi chạy khi máy khởi động và tự khởi động lại nếu tiến trình thoát bất thường; log stdout/stderr của mỗi tiến trình được ghi ra file để phục vụ chẩn đoán sự cố.
+
+### 6.3. Định tuyến theo trường (multi-tenant routing) — bổ sung v2.0
+
+Kiến trúc vật lý (frontend/backend/DB/launchd/Cloudflare Tunnel) ở mục 6.1–6.2 **không đổi** khi chuyển sang multi-tenant; thay đổi nằm ở tầng định tuyến logic bên trong frontend và backend, để một instance duy nhất phục vụ nhiều trường:
+
+- **Định tuyến API theo slug**: Toàn bộ endpoint nghiệp vụ theo trường chuyển từ `/api/v1/...` sang `/api/v1/:slug/...` (ví dụ `/api/v1/truong_nguyensieu/books`). Một middleware ở đầu chuỗi xử lý request đọc `:slug` từ URL, tra bảng `schools`:
+  - Không tìm thấy `slug` → trả 404 `school_not_found`.
+  - Tìm thấy nhưng `status != 'approved'` → trả 403 `school_not_approved` kèm `status` thực tế.
+  - Hợp lệ → nạp `school_id` vào context xử lý; đối chiếu với `school_id` trong JWT của người gọi (nếu có) để chặn truy cập chéo trường (xem FR-42); toàn bộ truy vấn CSDL bên dưới đều lọc/gán theo đúng `school_id` này.
+  - Một số endpoint là **toàn cục, không có `:slug`**, vì thuộc lớp quản lý liên trường: `POST /api/v1/schools/register`, `GET /api/v1/schools/check-slug`, và toàn bộ nhóm `/api/v1/super-admin/...` (đăng nhập, danh sách trường, duyệt/từ chối/khoá/mở khoá).
+- **Định tuyến giao diện theo slug**: Frontend Next.js tổ chức route theo cấu trúc `app/[slug]/login/page.tsx` và `app/[slug]/(app)/...` cho toàn bộ màn hình nghiệp vụ hiện có; mọi lời gọi API từ các trang này tự động chèn `slug` hiện tại vào đường dẫn gọi (`/api/v1/${slug}/...`). Phiên đăng nhập (session/token) được lưu kèm `slug` đã đăng nhập; nếu người dùng cố truy cập route của một `slug` khác trong khi phiên hiện tại thuộc một trường khác, hệ thống buộc đăng xuất và chuyển hướng về `/:slug/login` của trường đang truy cập.
+- **Luồng super_admin tách biệt**: `super_admin` có không gian định tuyến riêng, hoàn toàn độc lập với luồng theo trường: `app/super-admin/login/page.tsx` và `app/super-admin/(dashboard)/page.tsx` ở frontend, `/api/v1/super-admin/...` ở backend. Route `/super-admin/*` (trừ trang đăng nhập) yêu cầu phiên đăng nhập riêng của `super_admin`, không dùng chung cơ chế phiên với route `/:slug/*`.
+- **Trang gốc** (`/`): là trang landing công khai, giới thiệu hệ thống, có nút "Đăng ký cho trường của bạn" dẫn tới `/dang-ky` (FR-37) và một ô nhập "Mã trường" để chuyển hướng người dùng đã biết slug trường mình tới `/:slug/login`, kèm liên kết nhỏ tới `/super-admin/login`.
 
 ---
 
@@ -576,7 +710,23 @@ erDiagram
 - UC-P2: Xem tình trạng mượn/quá hạn/phạt của từng con.
 - UC-P3: Tra cứu danh mục sách (chỉ xem).
 
-### 7.5. Sơ đồ tuần tự — Luồng mượn sách
+### 7.5. Trường đăng ký sử dụng phần mềm — bổ sung v2.0
+- **Actor**: Người đại diện nhà trường (chưa có tài khoản trong hệ thống).
+- UC-R1: Truy cập trang công khai `/dang-ky`, điền thông tin trường (tên, slug mong muốn, địa chỉ, liên hệ) và thông tin tài khoản `admin` đầu tiên.
+- UC-R2: Kiểm tra slug còn trống trước khi gửi (gợi ý theo thời gian thực khi gõ).
+- UC-R3: Gửi đăng ký (FR-37), nhận màn hình xác nhận "Đã gửi đăng ký, chờ quản trị hệ thống phê duyệt".
+- UC-R4: Sau khi được duyệt (UC-SA2), đăng nhập lần đầu tại `/:slug/login` bằng tài khoản `admin` đã đăng ký.
+
+### 7.6. Super Admin (Quản trị hệ thống) — bổ sung v2.0
+- **Actor**: `super_admin`.
+- UC-SA1: Đăng nhập vào `/super-admin` (luồng phiên riêng, tách biệt với đăng nhập theo trường).
+- UC-SA2: Xem danh sách trường theo trạng thái (`pending`/`approved`/`rejected`/`suspended`), xem chi tiết một trường.
+- UC-SA3: Phê duyệt trường đang `pending` (FR-38).
+- UC-SA4: Từ chối trường đang `pending`, kèm lý do (FR-39).
+- UC-SA5: Tạm khoá một trường đang `approved` (FR-40).
+- UC-SA6: Mở lại một trường đang `suspended` (FR-41).
+
+### 7.7. Sơ đồ tuần tự — Luồng mượn sách
 
 ```mermaid
 sequenceDiagram
@@ -602,7 +752,7 @@ sequenceDiagram
     end
 ```
 
-### 7.6. Sơ đồ tuần tự — Luồng đặt trước sách
+### 7.8. Sơ đồ tuần tự — Luồng đặt trước sách
 
 ```mermaid
 sequenceDiagram
@@ -630,6 +780,51 @@ sequenceDiagram
     BE-->>S: (qua GET /notifications) Thông báo sách đã sẵn sàng để nhận
 ```
 
+### 7.9. Sơ đồ tuần tự — Đăng ký trường → Super Admin duyệt → Đăng nhập lần đầu (bổ sung v2.0)
+
+```mermaid
+sequenceDiagram
+    actor R as Người đại diện trường
+    participant FE as Frontend (Next.js)
+    participant BE as Backend (Go API)
+    participant DB as PostgreSQL
+    actor SA as Super Admin
+
+    R->>FE: Truy cập /dang-ky, nhập tên trường + slug + thông tin admin
+    FE->>BE: GET /api/v1/schools/check-slug?slug=...
+    BE->>DB: Kiểm tra schools.slug đã tồn tại chưa
+    BE-->>FE: Slug còn trống / đã dùng
+    R->>FE: Xác nhận gửi đăng ký
+    FE->>BE: POST /api/v1/schools/register {school_name, slug, admin_email, ...}
+    BE->>DB: BEGIN transaction
+    BE->>DB: INSERT schools (status='pending')
+    BE->>DB: INSERT users (role='admin', school_id=..., password đã băm)
+    BE->>DB: COMMIT
+    BE-->>FE: 201 Created (không cấp token)
+    FE-->>R: "Đã gửi đăng ký, chờ quản trị hệ thống phê duyệt"
+
+    Note over SA,DB: Song song, phía Super Admin
+    SA->>FE: Đăng nhập /super-admin
+    FE->>BE: POST /api/v1/super-admin/login
+    BE-->>FE: access_token (role=super_admin)
+    SA->>FE: Xem danh sách trường status=pending
+    FE->>BE: GET /api/v1/super-admin/schools?status=pending
+    BE-->>FE: Danh sách trường chờ duyệt (gồm trường vừa đăng ký)
+    SA->>FE: Bấm "Duyệt"
+    FE->>BE: POST /api/v1/super-admin/schools/:id/approve
+    BE->>DB: UPDATE schools SET status='approved', approved_by=SA.id, approved_at=now()
+    BE-->>FE: 200 OK
+    FE-->>SA: Trường chuyển sang trạng thái "Đã duyệt"
+
+    Note over R,DB: Admin của trường đăng nhập lần đầu
+    R->>FE: Truy cập /:slug/login, nhập email + mật khẩu đã đăng ký
+    FE->>BE: POST /api/v1/:slug/auth/login
+    BE->>DB: Tra schools theo slug → status='approved'
+    BE->>DB: Kiểm tra email/password trong phạm vi school_id đó
+    BE-->>FE: access_token (kèm school_id) + refresh_token cookie
+    FE-->>R: Vào được trang quản trị của trường mình
+```
+
 ---
 
 ## 8. Ràng buộc thiết kế & triển khai
@@ -641,9 +836,15 @@ sequenceDiagram
 - **Cổng dịch vụ cố định**: Frontend `3400`, Backend API `8190` — các cấu hình `.env`, reverse-proxy nội bộ, và LaunchAgent `.plist` phải nhất quán với hai cổng này.
 - **Môi trường triển khai**: máy macOS cá nhân (không phải cloud/VPS), quản lý tiến trình bằng `launchd` (LaunchAgents cho frontend, backend, và `cloudflared`), không dùng Docker/Kubernetes trong MVP.
 - **Expose ra Internet**: bắt buộc qua Cloudflare Tunnel, domain `thuvien.vietsoftware.vn`; không mở port router trực tiếp; TLS do Cloudflare đảm nhiệm ở biên.
-- **Không multi-tenant**: một instance hệ thống phục vụ đúng một trường học.
+- **[Cập nhật v2.0] Multi-tenant**: một instance hệ thống phục vụ **nhiều trường học** cùng lúc (không còn giới hạn một trường như bản v1.0). Mỗi trường được truy cập qua đường dẫn riêng dạng `/:slug` (web) và `/api/v1/:slug/...` (API); dữ liệu cách ly hoàn toàn theo `school_id` (xem mục 3.10, 4.9, 6.3).
+- **Quy tắc đặt tên slug (v2.0)**:
+  - `slug` là duy nhất trên toàn hệ thống (không phân biệt theo trường, vì slug chính là định danh phân biệt các trường).
+  - Chỉ chấp nhận ký tự chữ thường không dấu (`a`–`z`), chữ số (`0`–`9`), gạch dưới (`_`) và gạch ngang (`-`); không chấp nhận khoảng trắng, chữ hoa, ký tự có dấu tiếng Việt hay ký tự đặc biệt khác.
+  - Slug do trường tự đề xuất khi đăng ký (FR-37), được kiểm tra trùng ngay khi nhập (`GET /api/v1/schools/check-slug`) trước khi gửi đăng ký chính thức.
+  - Không trùng với các từ khoá đường dẫn đã dùng cho lớp toàn cục của hệ thống (ví dụ `super-admin`, `dang-ky`, `api`) để tránh xung đột định tuyến.
+  - Đổi slug sau khi trường đã hoạt động không thuộc phạm vi MVP (xem mục 2.4).
 - **Không phụ thuộc dịch vụ ngoại vi trả phí** trong MVP (không SMS gateway, không email service, không cổng thanh toán) — các tích hợp này thuộc phase 2 (mục 10).
-- **Toàn vẹn dữ liệu qua transaction**: các thao tác nhiều bước (mượn sách: kiểm tra điều kiện + tạo bản ghi + cập nhật trạng thái bản sao + ghi audit log) phải thực hiện trong một transaction DB để tránh trạng thái không nhất quán khi có lỗi giữa chừng.
+- **Toàn vẹn dữ liệu qua transaction**: các thao tác nhiều bước (mượn sách: kiểm tra điều kiện + tạo bản ghi + cập nhật trạng thái bản sao + ghi audit log; đăng ký trường: tạo `schools` + tạo `users` admin đầu tiên) phải thực hiện trong một transaction DB để tránh trạng thái không nhất quán khi có lỗi giữa chừng.
 
 ---
 
@@ -651,8 +852,8 @@ sequenceDiagram
 
 Hệ thống MVP được coi là hoàn thành và sẵn sàng bàn giao khi thoả mãn toàn bộ các điều kiện sau:
 
-1. **Chức năng**: Toàn bộ các yêu cầu chức năng FR-01 đến FR-36 ở mục 3 được triển khai đầy đủ, đúng quy tắc nghiệp vụ và tiêu chí chấp nhận đã nêu; các endpoint đúng khớp với `docs/API.md` (không sai method, path, hoặc cấu trúc payload).
-2. **Phân quyền**: Kiểm thử xác nhận đúng bảng phân quyền 5 vai trò ở cuối `docs/API.md` — mọi endpoint từ chối đúng cách (401/403) khi gọi sai vai trò hoặc chưa đăng nhập.
+1. **Chức năng**: Toàn bộ các yêu cầu chức năng FR-01 đến FR-43 ở mục 3 (bao gồm nhóm đa trường FR-37 đến FR-43) được triển khai đầy đủ, đúng quy tắc nghiệp vụ và tiêu chí chấp nhận đã nêu; các endpoint đúng khớp với `docs/API.md` và `docs/MULTI_TENANT_SPEC.md` (không sai method, path, hoặc cấu trúc payload).
+2. **Phân quyền**: Kiểm thử xác nhận đúng bảng phân quyền 6 vai trò (5 vai trò trong phạm vi trường + `super_admin`) — mọi endpoint từ chối đúng cách (401/403) khi gọi sai vai trò hoặc chưa đăng nhập; đặc biệt `super_admin` không có quyền thao tác dữ liệu nghiệp vụ bên trong bất kỳ trường nào, và `admin`/các vai trò khác của một trường không có quyền gọi bất kỳ endpoint nào dưới `/api/v1/super-admin/...`.
 3. **Toàn vẹn dữ liệu**: Toàn bộ ràng buộc khoá chính/khoá ngoại/unique trong `backend/migrations/0001_init.sql` được tôn trọng; các thao tác nghiệp vụ nhiều bước chạy trong transaction, không để lại trạng thái nửa vời khi lỗi.
 4. **Bảo mật cơ bản**: Mật khẩu được băm; JWT hoạt động đúng vòng đời (access 15 phút, refresh 7 ngày qua cookie HttpOnly); không có lỗ hổng SQL Injection/XSS được phát hiện trong kiểm thử bảo mật cơ bản.
 5. **Audit log**: Các hành động nghiệp vụ quan trọng (mượn, trả, gia hạn, đặt trước, thu/miễn phạt, tạo/sửa người dùng) đều để lại bản ghi trong `audit_logs`.
@@ -660,7 +861,10 @@ Hệ thống MVP được coi là hoàn thành và sẵn sàng bàn giao khi tho
 7. **Sao lưu**: Tác vụ backup PostgreSQL hằng ngày hoạt động và đã thử khôi phục thành công ít nhất một lần từ bản sao lưu.
 8. **Giao diện**: Tất cả màn hình chính (đăng nhập, tra cứu sách, chi tiết sách, mượn/trả tại quầy, đặt trước, danh sách phạt, thông báo, báo cáo, cổng phụ huynh) đã có giao diện tiếng Việt, hiển thị đúng trên desktop và di động.
 9. **Dữ liệu khởi tạo**: Có sẵn ít nhất một tài khoản `admin`, dữ liệu mẫu danh mục (thể loại/tác giả/nhà xuất bản) và một số đầu sách/bản sao để nhà trường có thể bắt đầu sử dụng ngay sau bàn giao.
-10. **Tài liệu bàn giao**: `docs/API.md`, `docs/SRS.md`, và schema migration được cập nhật khớp với trạng thái thực tế của hệ thống tại thời điểm bàn giao.
+10. **Tài liệu bàn giao**: `docs/API.md`, `docs/SRS.md`, `docs/MULTI_TENANT_SPEC.md` và schema migration được cập nhật khớp với trạng thái thực tế của hệ thống tại thời điểm bàn giao.
+11. **Cách ly dữ liệu đa trường** *(bổ sung v2.0)*: Với ít nhất 2 trường khác nhau được tạo trong môi trường kiểm thử (mỗi trường có dữ liệu sách, người dùng, giao dịch mượn/trả, phạt riêng), xác nhận bằng kiểm thử tự động và thủ công rằng người dùng của trường này **không thể** xem, tạo, sửa, hoặc xoá bất kỳ dữ liệu nào của trường kia — dù thao tác qua giao diện hay gọi trực tiếp API với `id` đã biết trước; mọi cố gắng truy cập chéo trường đều bị từ chối đúng mã lỗi (403/404) mà không rò rỉ sự tồn tại của dữ liệu trường khác (NFR-27).
+12. **Kiểm soát vòng đời trường** *(bổ sung v2.0)*: Kiểm thử xác nhận đầy đủ các trạng thái trường hoạt động đúng như thiết kế — trường mới đăng ký (`pending`) không đăng nhập được; trường bị từ chối (`rejected`) không đăng nhập được; trường bị tạm khoá (`suspended`) không đăng nhập được và các phiên đang mở bị vô hiệu hoá; chỉ trường ở trạng thái `approved` mới đăng nhập và sử dụng được bình thường; luồng đăng ký → duyệt → đăng nhập lần đầu (mục 7.9) chạy thông suốt từ đầu đến cuối trong kiểm thử end-to-end.
+13. **Slug và định tuyến** *(bổ sung v2.0)*: Slug trường là duy nhất toàn hệ thống, được kiểm tra trùng trước khi đăng ký; truy cập `/:slug/...` hoặc `/api/v1/:slug/...` với slug không tồn tại trả lỗi rõ ràng (404), không lộ thông tin nội bộ hệ thống.
 
 ---
 
@@ -675,7 +879,7 @@ Các hạng mục sau không thuộc phạm vi MVP nhưng được ghi nhận l�
 5. **Import/Export hàng loạt**: Nhập danh sách học sinh/giáo viên và đầu sách từ file Excel/CSV; xuất báo cáo ra Excel/PDF.
 6. **Tìm kiếm nâng cao**: Tìm kiếm full-text tiếng Việt có dấu/không dấu chính xác hơn (ví dụ dùng `unaccent` extension của PostgreSQL hoặc công cụ tìm kiếm chuyên dụng).
 7. **Trang quản trị nhật ký kiểm toán**: Giao diện cho `admin` tra cứu, lọc `audit_logs` theo người dùng/hành động/thời gian.
-8. **Đa trường/multi-tenant**: Nếu mô hình mở rộng ra nhiều trường học dùng chung hệ thống, cần bổ sung khái niệm "tenant"/"school_id" xuyên suốt schema.
+8. ~~**Đa trường/multi-tenant**: Nếu mô hình mở rộng ra nhiều trường học dùng chung hệ thống, cần bổ sung khái niệm "tenant"/"school_id" xuyên suốt schema.~~ **[Đã triển khai ở v2.0 — không còn là hạng mục Phase 2+]**. Xem mục 3.10, 4.9, 5, 6.3, 7.5–7.9 cho đặc tả chi tiết. Các hướng mở rộng tiếp theo cho mô hình đa trường (không thuộc MVP v2.0) gồm: cho phép trường tự đổi slug qua giao diện quản trị, phân cấp gói dịch vụ/giới hạn theo trường (ví dụ giới hạn số tài khoản), trang quản trị cho `super_admin` xem báo cáo tổng hợp liên trường.
 9. **Tích hợp hệ thống quản lý học sinh (SIS)** của trường để đồng bộ danh sách lớp/học sinh tự động, giảm nhập liệu thủ công.
 10. **Nâng cấp hạ tầng triển khai**: Khi lưu lượng tăng, cân nhắc chuyển từ máy macOS cá nhân sang VPS/cloud có SLA cao hơn, đồng thời giữ nguyên kiến trúc Go + Next.js + PostgreSQL đã chứng minh hiệu quả ở MVP.
 

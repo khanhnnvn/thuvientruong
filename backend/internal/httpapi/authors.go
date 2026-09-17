@@ -9,7 +9,7 @@ import (
 )
 
 func (s *Server) listAuthors(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.pool.Query(r.Context(), `SELECT id, name FROM authors ORDER BY name`)
+	rows, err := s.pool.Query(r.Context(), `SELECT id, name FROM authors WHERE school_id = $1 ORDER BY name`, schoolID(r))
 	if err != nil {
 		s.internalError(w, r, err)
 		return
@@ -42,7 +42,7 @@ func (s *Server) createAuthor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var a Author
-	err := s.pool.QueryRow(r.Context(), `INSERT INTO authors (name) VALUES ($1) RETURNING id, name`, req.Name).Scan(&a.ID, &a.Name)
+	err := s.pool.QueryRow(r.Context(), `INSERT INTO authors (name, school_id) VALUES ($1, $2) RETURNING id, name`, req.Name, schoolID(r)).Scan(&a.ID, &a.Name)
 	if err != nil {
 		s.internalError(w, r, err)
 		return
@@ -58,8 +58,8 @@ func (s *Server) updateAuthor(w http.ResponseWriter, r *http.Request) {
 	}
 	var a Author
 	err := s.pool.QueryRow(r.Context(),
-		`UPDATE authors SET name = COALESCE(NULLIF($1,''), name) WHERE id = $2 RETURNING id, name`,
-		req.Name, id).Scan(&a.ID, &a.Name)
+		`UPDATE authors SET name = COALESCE(NULLIF($1,''), name) WHERE id = $2 AND school_id = $3 RETURNING id, name`,
+		req.Name, id, schoolID(r)).Scan(&a.ID, &a.Name)
 	if errors.Is(err, pgx.ErrNoRows) {
 		writeError(w, http.StatusNotFound, "not_found", "Không tìm thấy tác giả.")
 		return
@@ -73,7 +73,7 @@ func (s *Server) updateAuthor(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) deleteAuthor(w http.ResponseWriter, r *http.Request) {
 	id := pathParam(r, "id")
-	tag, err := s.pool.Exec(r.Context(), `DELETE FROM authors WHERE id = $1`, id)
+	tag, err := s.pool.Exec(r.Context(), `DELETE FROM authors WHERE id = $1 AND school_id = $2`, id, schoolID(r))
 	if err != nil {
 		s.internalError(w, r, err)
 		return

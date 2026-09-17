@@ -3,7 +3,7 @@
 import { useEffect, useState, FormEvent } from "react";
 import { Plus, KeyRound, Link2, Pencil, Search } from "lucide-react";
 import { RoleGate } from "@/components/RoleGate";
-import { apiFetch, ApiError, unwrapList } from "@/lib/api";
+import { useApi, ApiError, unwrapList } from "@/lib/api";
 import type { Role, User } from "@/lib/types";
 import { ROLE_LABELS } from "@/lib/types";
 import { Card, CardBody } from "@/components/ui/Card";
@@ -26,6 +26,7 @@ export default function UsersPage() {
 }
 
 function UsersManager() {
+  const apiFetch = useApi();
   const toast = useToast();
   const [q, setQ] = useState("");
   const [role, setRole] = useState("");
@@ -187,6 +188,7 @@ function UsersManager() {
 }
 
 function UserFormModal({ user, onClose, onSuccess }: { user?: User; onClose: () => void; onSuccess: () => void }) {
+  const apiFetch = useApi();
   const isEdit = Boolean(user);
   const [name, setName] = useState(user?.full_name || user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
@@ -279,6 +281,7 @@ function UserFormModal({ user, onClose, onSuccess }: { user?: User; onClose: () 
 }
 
 function LinkParentModal({ student, onClose, onSuccess }: { student: User; onClose: () => void; onSuccess: () => void }) {
+  const apiFetch = useApi();
   const [parentId, setParentId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);

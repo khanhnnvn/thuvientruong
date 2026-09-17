@@ -9,7 +9,7 @@ import (
 )
 
 func (s *Server) listPublishers(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.pool.Query(r.Context(), `SELECT id, name FROM publishers ORDER BY name`)
+	rows, err := s.pool.Query(r.Context(), `SELECT id, name FROM publishers WHERE school_id = $1 ORDER BY name`, schoolID(r))
 	if err != nil {
 		s.internalError(w, r, err)
 		return
@@ -42,7 +42,7 @@ func (s *Server) createPublisher(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var p Publisher
-	err := s.pool.QueryRow(r.Context(), `INSERT INTO publishers (name) VALUES ($1) RETURNING id, name`, req.Name).Scan(&p.ID, &p.Name)
+	err := s.pool.QueryRow(r.Context(), `INSERT INTO publishers (name, school_id) VALUES ($1, $2) RETURNING id, name`, req.Name, schoolID(r)).Scan(&p.ID, &p.Name)
 	if err != nil {
 		s.internalError(w, r, err)
 		return
@@ -58,8 +58,8 @@ func (s *Server) updatePublisher(w http.ResponseWriter, r *http.Request) {
 	}
 	var p Publisher
 	err := s.pool.QueryRow(r.Context(),
-		`UPDATE publishers SET name = COALESCE(NULLIF($1,''), name) WHERE id = $2 RETURNING id, name`,
-		req.Name, id).Scan(&p.ID, &p.Name)
+		`UPDATE publishers SET name = COALESCE(NULLIF($1,''), name) WHERE id = $2 AND school_id = $3 RETURNING id, name`,
+		req.Name, id, schoolID(r)).Scan(&p.ID, &p.Name)
 	if errors.Is(err, pgx.ErrNoRows) {
 		writeError(w, http.StatusNotFound, "not_found", "Không tìm thấy nhà xuất bản.")
 		return
@@ -73,7 +73,7 @@ func (s *Server) updatePublisher(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) deletePublisher(w http.ResponseWriter, r *http.Request) {
 	id := pathParam(r, "id")
-	tag, err := s.pool.Exec(r.Context(), `DELETE FROM publishers WHERE id = $1`, id)
+	tag, err := s.pool.Exec(r.Context(), `DELETE FROM publishers WHERE id = $1 AND school_id = $2`, id, schoolID(r))
 	if err != nil {
 		s.internalError(w, r, err)
 		return

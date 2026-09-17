@@ -2,6 +2,30 @@ package httpapi
 
 import "time"
 
+// School mirrors the schools table (tenant record).
+type School struct {
+	ID              string     `json:"id"`
+	Slug            string     `json:"slug"`
+	Name            string     `json:"name"`
+	Address         *string    `json:"address,omitempty"`
+	ContactPhone    *string    `json:"contact_phone,omitempty"`
+	ContactEmail    *string    `json:"contact_email,omitempty"`
+	Status          string     `json:"status"`
+	RejectionReason *string    `json:"rejection_reason,omitempty"`
+	ApprovedBy      *string    `json:"approved_by,omitempty"`
+	ApprovedAt      *time.Time `json:"approved_at,omitempty"`
+	CreatedAt       time.Time  `json:"created_at"`
+}
+
+const schoolColumns = `id, slug, name, address, contact_phone, contact_email, status, rejection_reason, approved_by, approved_at, created_at`
+
+func scanSchool(row pgxRow) (School, error) {
+	var sc School
+	err := row.Scan(&sc.ID, &sc.Slug, &sc.Name, &sc.Address, &sc.ContactPhone, &sc.ContactEmail, &sc.Status,
+		&sc.RejectionReason, &sc.ApprovedBy, &sc.ApprovedAt, &sc.CreatedAt)
+	return sc, err
+}
+
 // User mirrors the users table, minus password_hash which never leaves the server.
 type User struct {
 	ID          string    `json:"id"`

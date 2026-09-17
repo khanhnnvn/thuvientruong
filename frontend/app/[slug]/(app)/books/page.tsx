@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Search, BookOpen, Plus } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { apiFetch, ApiError, unwrapList } from "@/lib/api";
+import { useApi, useSlug, ApiError, unwrapList } from "@/lib/api";
 import type { Author, Book, Category } from "@/lib/types";
 import { Input, Select } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -22,6 +22,8 @@ const BOOK_TYPES = [
 
 export default function BooksPage() {
   const { user } = useAuth();
+  const slug = useSlug();
+  const apiFetch = useApi();
   const canManage = user?.role === "admin" || user?.role === "librarian";
 
   const [q, setQ] = useState("");
@@ -70,7 +72,7 @@ export default function BooksPage() {
           <p className="mt-1 text-sm text-slate-500">Tìm kiếm và tra cứu kho sách của thư viện.</p>
         </div>
         {canManage && (
-          <Link href="/books/new">
+          <Link href={`/${slug}/books/new`}>
             <Button>
               <Plus className="h-4 w-4" />
               Thêm sách mới
@@ -135,11 +137,12 @@ export default function BooksPage() {
 }
 
 function BookCard({ book }: { book: Book }) {
+  const slug = useSlug();
   const available = (book.available_count ?? 0) > 0;
   const total = book.total_copies ?? book.copies?.length;
 
   return (
-    <Link href={`/books/${book.id}`} className="group block">
+    <Link href={`/${slug}/books/${book.id}`} className="group block">
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow group-hover:shadow-md">
         <div className="flex aspect-[3/4] items-center justify-center bg-slate-100">
           {book.cover_url ? (

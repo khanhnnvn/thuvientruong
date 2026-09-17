@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BookOpen, BookCopy as BookCopyIcon, AlertTriangle, Wallet, ArrowRight } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { apiFetch, ApiError, unwrapList } from "@/lib/api";
+import { useApi, useSlug, ApiError, unwrapList } from "@/lib/api";
 import type { BorrowRecord, ChildStatus, OverviewReport } from "@/lib/types";
 import { Card, CardBody, CardHeader, CardTitle, StatCard } from "@/components/ui/Card";
 import { LoadingState, ErrorState, EmptyState } from "@/components/ui/States";
@@ -25,6 +25,8 @@ export default function DashboardPage() {
 }
 
 function OverviewDashboard() {
+  const apiFetch = useApi();
+  const slug = useSlug();
   const [data, setData] = useState<OverviewReport | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -63,10 +65,10 @@ function OverviewDashboard() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <QuickLinkCard href="/borrow" title="Mượn / Trả sách" description="Xử lý cho mượn, trả sách, gia hạn" />
-        <QuickLinkCard href="/fines" title="Quản lý phạt" description="Thu tiền phạt hoặc miễn phạt cho học sinh" />
-        <QuickLinkCard href="/reservations" title="Đặt trước" description="Xử lý các yêu cầu đặt trước sách" />
-        <QuickLinkCard href="/books" title="Danh mục sách" description="Tìm kiếm và quản lý kho sách" />
+        <QuickLinkCard href={`/${slug}/borrow`} title="Mượn / Trả sách" description="Xử lý cho mượn, trả sách, gia hạn" />
+        <QuickLinkCard href={`/${slug}/fines`} title="Quản lý phạt" description="Thu tiền phạt hoặc miễn phạt cho học sinh" />
+        <QuickLinkCard href={`/${slug}/reservations`} title="Đặt trước" description="Xử lý các yêu cầu đặt trước sách" />
+        <QuickLinkCard href={`/${slug}/books`} title="Danh mục sách" description="Tìm kiếm và quản lý kho sách" />
       </div>
     </div>
   );
@@ -88,6 +90,8 @@ function QuickLinkCard({ href, title, description }: { href: string; title: stri
 
 function SelfBorrowDashboard() {
   const { user } = useAuth();
+  const apiFetch = useApi();
+  const slug = useSlug();
   const [records, setRecords] = useState<BorrowRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -122,7 +126,7 @@ function SelfBorrowDashboard() {
       <Card>
         <CardHeader className="flex items-center justify-between">
           <CardTitle>Sách đang mượn</CardTitle>
-          <Link href="/books" className="text-sm font-medium text-blue-600 hover:underline">
+          <Link href={`/${slug}/books`} className="text-sm font-medium text-blue-600 hover:underline">
             Tìm sách để đọc thêm
           </Link>
         </CardHeader>
@@ -152,6 +156,7 @@ function SelfBorrowDashboard() {
 }
 
 function ParentDashboard() {
+  const apiFetch = useApi();
   const [children, setChildren] = useState<ChildStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

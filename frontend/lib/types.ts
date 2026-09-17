@@ -145,3 +145,27 @@ export interface ChildStatus {
 export interface ApiErrorBody {
   error?: { code?: string; message?: string };
 }
+
+export type SchoolStatus = "pending" | "approved" | "rejected" | "suspended";
+
+export const SCHOOL_STATUS_LABELS: Record<SchoolStatus, string> = {
+  pending: "Chờ duyệt",
+  approved: "Đã duyệt",
+  rejected: "Từ chối",
+  suspended: "Tạm khoá",
+};
+
+export interface School {
+  id: string;
+  slug: string;
+  name: string;
+  address?: string;
+  contact_phone?: string;
+  contact_email?: string;
+  status: SchoolStatus;
+  rejection_reason?: string;
+  approved_by?: string;
+  approved_at?: string;
+  created_at?: string;
+  [key: string]: unknown;
+}

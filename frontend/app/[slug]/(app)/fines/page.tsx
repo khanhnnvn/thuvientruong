@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Wallet, ShieldOff } from "lucide-react";
 import { RoleGate } from "@/components/RoleGate";
-import { apiFetch, ApiError, unwrapList } from "@/lib/api";
+import { useApi, ApiError, unwrapList } from "@/lib/api";
 import type { Fine } from "@/lib/types";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -28,6 +28,7 @@ export default function FinesPage() {
 }
 
 function FinesManager() {
+  const apiFetch = useApi();
   const toast = useToast();
   const [status, setStatus] = useState("unpaid");
   const [fines, setFines] = useState<Fine[]>([]);

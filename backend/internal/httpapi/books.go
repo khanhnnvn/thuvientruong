@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -9,6 +10,8 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+var errOutOfScope = errors.New("referenced row belongs to a different school")
+
 func (s *Server) listBooks(w http.ResponseWriter, r *http.Request) {
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	categoryID := r.URL.Query().Get("category_id")
@@ -16,8 +19,8 @@ func (s *Server) listBooks(w http.ResponseWriter, r *http.Request) {
 	pubType := r.URL.Query().Get("type")
 	page, pageSize, offset := pagination(r)
 
-	var conds []string
-	var args []any
+	args := []any{schoolID(r)}
+	conds := []string{"b.school_id = $1"}
 	from := "FROM books b"
 	if authorID != "" {
 		from += " JOIN book_authors ba ON ba.book_id = b.id"
@@ -115,32 +118,39 @@ func (s *Server) createBook(w http.ResponseWriter, r *http.Request) {
 	if req.Language == "" {
 		req.Language = "vi"
 	}
+	sid := schoolID(r)
 
-	tx, err := s.pool.Begin(r.Context())
+	ctx := r.Context()
+	if err := s.checkRefsInScope(ctx, sid, req.PublisherID, req.CategoryID, req.AuthorIDs); err != nil {
+		writeError(w, http.StatusUnprocessableEntity, "invalid_request", "Nhà xuất bản, danh mục hoặc tác giả không hợp lệ.")
+		return
+	}
+
+	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		s.internalError(w, r, err)
 		return
 	}
-	defer tx.Rollback(r.Context())
+	defer tx.Rollback(ctx)
 
-	row := tx.QueryRow(r.Context(), `
-		INSERT INTO books (isbn, title, subtitle, publication_type, publisher_id, category_id, publish_year, edition, language, pages, description, cover_url, created_by)
-		VALUES (NULLIF($1,''), $2, NULLIF($3,''), $4, $5, $6, $7, NULLIF($8,''), $9, $10, NULLIF($11,''), NULLIF($12,''), $13)
+	row := tx.QueryRow(ctx, `
+		INSERT INTO books (isbn, title, subtitle, publication_type, publisher_id, category_id, publish_year, edition, language, pages, description, cover_url, created_by, school_id)
+		VALUES (NULLIF($1,''), $2, NULLIF($3,''), $4, $5, $6, $7, NULLIF($8,''), $9, $10, NULLIF($11,''), NULLIF($12,''), $13, $14)
 		RETURNING `+bookColumns,
 		req.ISBN, req.Title, req.Subtitle, req.PublicationType, req.PublisherID, req.CategoryID, req.PublishYear,
-		req.Edition, req.Language, req.Pages, req.Description, req.CoverURL, claims.UserID)
+		req.Edition, req.Language, req.Pages, req.Description, req.CoverURL, claims.UserID, sid)
 	b, err := scanBook(row)
 	if err != nil {
 		s.internalError(w, r, err)
 		return
 	}
 	for _, aid := range req.AuthorIDs {
-		if _, err := tx.Exec(r.Context(), `INSERT INTO book_authors (book_id, author_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`, b.ID, aid); err != nil {
+		if _, err := tx.Exec(ctx, `INSERT INTO book_authors (book_id, author_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`, b.ID, aid); err != nil {
 			s.internalError(w, r, err)
 			return
 		}
 	}
-	if err := tx.Commit(r.Context()); err != nil {
+	if err := tx.Commit(ctx); err != nil {
 		s.internalError(w, r, err)
 		return
 	}
@@ -148,9 +158,55 @@ func (s *Server) createBook(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, b)
 }
 
+// checkRefsInScope verifies that publisherID, categoryID (if set) and every
+// id in authorIDs name a row belonging to schoolID, preventing a book from
+// ever linking to another school's catalog rows.
+func (s *Server) checkRefsInScope(ctx context.Context, schoolID string, publisherID, categoryID *string, authorIDs []string) error {
+	if publisherID != nil {
+		var ok bool
+		if err := s.pool.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM publishers WHERE id = $1 AND school_id = $2)`, *publisherID, schoolID).Scan(&ok); err != nil {
+			return err
+		}
+		if !ok {
+			return errOutOfScope
+		}
+	}
+	if categoryID != nil {
+		var ok bool
+		if err := s.pool.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM categories WHERE id = $1 AND school_id = $2)`, *categoryID, schoolID).Scan(&ok); err != nil {
+			return err
+		}
+		if !ok {
+			return errOutOfScope
+		}
+	}
+	if len(authorIDs) > 0 {
+		var count int
+		if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM authors WHERE school_id = $1 AND id = ANY($2)`, schoolID, authorIDs).Scan(&count); err != nil {
+			return err
+		}
+		if count != len(uniqueStrings(authorIDs)) {
+			return errOutOfScope
+		}
+	}
+	return nil
+}
+
+func uniqueStrings(in []string) []string {
+	seen := make(map[string]bool, len(in))
+	out := make([]string, 0, len(in))
+	for _, v := range in {
+		if !seen[v] {
+			seen[v] = true
+			out = append(out, v)
+		}
+	}
+	return out
+}
+
 func (s *Server) getBook(w http.ResponseWriter, r *http.Request) {
 	id := pathParam(r, "id")
-	row := s.pool.QueryRow(r.Context(), `SELECT `+bookColumns+` FROM books WHERE id = $1`, id)
+	row := s.pool.QueryRow(r.Context(), `SELECT `+bookColumns+` FROM books WHERE id = $1 AND school_id = $2`, id, schoolID(r))
 	b, err := scanBook(row)
 	if errors.Is(err, pgx.ErrNoRows) {
 		writeError(w, http.StatusNotFound, "not_found", "Không tìm thấy sách.")
@@ -206,15 +262,21 @@ func (s *Server) updateBook(w http.ResponseWriter, r *http.Request) {
 	if !decodeJSON(w, r, &req) {
 		return
 	}
+	sid := schoolID(r)
+	ctx := r.Context()
+	if err := s.checkRefsInScope(ctx, sid, req.PublisherID, req.CategoryID, req.AuthorIDs); err != nil {
+		writeError(w, http.StatusUnprocessableEntity, "invalid_request", "Nhà xuất bản, danh mục hoặc tác giả không hợp lệ.")
+		return
+	}
 
-	tx, err := s.pool.Begin(r.Context())
+	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		s.internalError(w, r, err)
 		return
 	}
-	defer tx.Rollback(r.Context())
+	defer tx.Rollback(ctx)
 
-	row := tx.QueryRow(r.Context(), `
+	row := tx.QueryRow(ctx, `
 		UPDATE books SET
 			isbn = COALESCE(NULLIF($1,''), isbn),
 			title = COALESCE(NULLIF($2,''), title),
@@ -229,10 +291,10 @@ func (s *Server) updateBook(w http.ResponseWriter, r *http.Request) {
 			description = CASE WHEN $11 = '' THEN description ELSE $11 END,
 			cover_url = CASE WHEN $12 = '' THEN cover_url ELSE $12 END,
 			updated_at = now()
-		WHERE id = $13
+		WHERE id = $13 AND school_id = $14
 		RETURNING `+bookColumns,
 		req.ISBN, req.Title, req.Subtitle, req.PublicationType, req.PublisherID, req.CategoryID, req.PublishYear,
-		req.Edition, req.Language, req.Pages, req.Description, req.CoverURL, id)
+		req.Edition, req.Language, req.Pages, req.Description, req.CoverURL, id, sid)
 	b, err := scanBook(row)
 	if errors.Is(err, pgx.ErrNoRows) {
 		writeError(w, http.StatusNotFound, "not_found", "Không tìm thấy sách.")
@@ -264,7 +326,7 @@ func (s *Server) updateBook(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) deleteBook(w http.ResponseWriter, r *http.Request) {
 	id := pathParam(r, "id")
-	tag, err := s.pool.Exec(r.Context(), `DELETE FROM books WHERE id = $1`, id)
+	tag, err := s.pool.Exec(r.Context(), `DELETE FROM books WHERE id = $1 AND school_id = $2`, id, schoolID(r))
 	if err != nil {
 		s.internalError(w, r, err)
 		return

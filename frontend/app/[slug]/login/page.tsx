@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, FormEvent, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { BookMarked, Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Input, Label, FormField } from "@/components/ui/Input";
 
 function LoginForm() {
+  const { slug } = useParams<{ slug: string }>();
   const { login } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -17,6 +18,8 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const loginPath = `/${slug}/login`;
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
@@ -24,7 +27,7 @@ function LoginForm() {
     try {
       const user = await login(email, password);
       const next = searchParams.get("next");
-      router.replace(next && next !== "/login" ? next : "/");
+      router.replace(next && next !== loginPath ? next : `/${slug}`);
       router.refresh();
       void user;
     } catch (err) {
@@ -47,6 +50,7 @@ function LoginForm() {
           </div>
           <h1 className="text-2xl font-bold text-slate-900">Thư viện Trường học</h1>
           <p className="mt-1 text-sm text-slate-500">Đăng nhập để quản lý mượn / trả sách</p>
+          <p className="mt-0.5 text-xs font-medium text-slate-400">Mã trường: {slug}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

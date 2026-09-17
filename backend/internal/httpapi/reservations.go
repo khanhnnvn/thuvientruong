@@ -23,8 +23,9 @@ func (s *Server) createReservation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
+	sid := schoolID(r)
 	var bookExists bool
-	if err := s.pool.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM books WHERE id = $1)`, req.BookID).Scan(&bookExists); err != nil {
+	if err := s.pool.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM books WHERE id = $1 AND school_id = $2)`, req.BookID, sid).Scan(&bookExists); err != nil {
 		s.internalError(w, r, err)
 		return
 	}
@@ -55,8 +56,8 @@ func (s *Server) createReservation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	row := s.pool.QueryRow(ctx, `INSERT INTO reservations (book_id, user_id) VALUES ($1, $2) RETURNING `+reservationColumns,
-		req.BookID, claims.UserID)
+	row := s.pool.QueryRow(ctx, `INSERT INTO reservations (book_id, user_id, school_id) VALUES ($1, $2, $3) RETURNING `+reservationColumns,
+		req.BookID, claims.UserID, sid)
 	res, err := scanReservation(row)
 	if err != nil {
 		s.internalError(w, r, err)
@@ -81,7 +82,7 @@ func (s *Server) updateReservation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	row := s.pool.QueryRow(ctx, `SELECT `+reservationColumns+` FROM reservations WHERE id = $1`, id)
+	row := s.pool.QueryRow(ctx, `SELECT `+reservationColumns+` FROM reservations WHERE id = $1 AND school_id = $2`, id, schoolID(r))
 	res, err := scanReservation(row)
 	if errors.Is(err, pgx.ErrNoRows) {
 		writeError(w, http.StatusNotFound, "not_found", "Không tìm thấy đặt trước.")
@@ -140,8 +141,8 @@ func (s *Server) listReservations(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	var conds []string
-	var args []any
+	args := []any{schoolID(r)}
+	conds := []string{"school_id = $1"}
 	if userID != "" {
 		args = append(args, userID)
 		conds = append(conds, fmt.Sprintf("user_id = $%d", len(args)))
@@ -154,10 +155,7 @@ func (s *Server) listReservations(w http.ResponseWriter, r *http.Request) {
 		args = append(args, status)
 		conds = append(conds, fmt.Sprintf("status = $%d", len(args)))
 	}
-	where := ""
-	if len(conds) > 0 {
-		where = "WHERE " + strings.Join(conds, " AND ")
-	}
+	where := "WHERE " + strings.Join(conds, " AND ")
 	rows, err := s.pool.Query(r.Context(), fmt.Sprintf(`SELECT %s FROM reservations %s ORDER BY reserved_at DESC`, reservationColumns, where), args...)
 	if err != nil {
 		s.internalError(w, r, err)

@@ -11,7 +11,7 @@ import (
 
 func (s *Server) listCopiesForBook(w http.ResponseWriter, r *http.Request) {
 	bookID := pathParam(r, "id")
-	rows, err := s.pool.Query(r.Context(), `SELECT `+copyColumns+` FROM book_copies WHERE book_id = $1 ORDER BY copy_code`, bookID)
+	rows, err := s.pool.Query(r.Context(), `SELECT `+copyColumns+` FROM book_copies WHERE book_id = $1 AND school_id = $2 ORDER BY copy_code`, bookID, schoolID(r))
 	if err != nil {
 		s.internalError(w, r, err)
 		return
@@ -49,9 +49,10 @@ func (s *Server) createCopy(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "Không tìm thấy sách.")
 		return
 	}
+	sid := schoolID(r)
 
 	var bookExists bool
-	if err := s.pool.QueryRow(r.Context(), `SELECT EXISTS (SELECT 1 FROM books WHERE id = $1)`, bookID).Scan(&bookExists); err != nil {
+	if err := s.pool.QueryRow(r.Context(), `SELECT EXISTS (SELECT 1 FROM books WHERE id = $1 AND school_id = $2)`, bookID, sid).Scan(&bookExists); err != nil {
 		s.internalError(w, r, err)
 		return
 	}
@@ -60,8 +61,8 @@ func (s *Server) createCopy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// copy_code is unique across the whole library; retry a few times on the
-	// rare race where two staff add a copy to the same book at once.
+	// copy_code is unique within the school; retry a few times on the rare
+	// race where two staff add a copy to the same book at once.
 	var c BookCopy
 	for attempt := 0; attempt < 5; attempt++ {
 		var seq int
@@ -71,10 +72,10 @@ func (s *Server) createCopy(w http.ResponseWriter, r *http.Request) {
 		}
 		code := fmt.Sprintf("%s-%03d", strings.ToUpper(bookID[:8]), seq+1+attempt)
 		row := s.pool.QueryRow(r.Context(), `
-			INSERT INTO book_copies (book_id, copy_code, shelf_location, condition, price, acquired_at)
-			VALUES ($1, $2, NULLIF($3,''), $4, $5, $6)
+			INSERT INTO book_copies (book_id, copy_code, shelf_location, condition, price, acquired_at, school_id)
+			VALUES ($1, $2, NULLIF($3,''), $4, $5, $6, $7)
 			RETURNING `+copyColumns,
-			bookID, code, req.ShelfLocation, req.Condition, req.Price, req.AcquiredAt)
+			bookID, code, req.ShelfLocation, req.Condition, req.Price, req.AcquiredAt, sid)
 		var err error
 		c, err = scanCopy(row)
 		if isUniqueViolation(err) {
@@ -125,8 +126,8 @@ func (s *Server) updateCopy(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnprocessableEntity, "invalid_request", "Không có trường nào để cập nhật.")
 		return
 	}
-	args = append(args, id)
-	query := fmt.Sprintf(`UPDATE book_copies SET %s WHERE id = $%d RETURNING %s`, strings.Join(sets, ", "), len(args), copyColumns)
+	args = append(args, id, schoolID(r))
+	query := fmt.Sprintf(`UPDATE book_copies SET %s WHERE id = $%d AND school_id = $%d RETURNING %s`, strings.Join(sets, ", "), len(args)-1, len(args), copyColumns)
 	row := s.pool.QueryRow(r.Context(), query, args...)
 	c, err := scanCopy(row)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -143,7 +144,7 @@ func (s *Server) updateCopy(w http.ResponseWriter, r *http.Request) {
 func (s *Server) deleteCopy(w http.ResponseWriter, r *http.Request) {
 	id := pathParam(r, "id")
 	var status string
-	err := s.pool.QueryRow(r.Context(), `SELECT status FROM book_copies WHERE id = $1`, id).Scan(&status)
+	err := s.pool.QueryRow(r.Context(), `SELECT status FROM book_copies WHERE id = $1 AND school_id = $2`, id, schoolID(r)).Scan(&status)
 	if errors.Is(err, pgx.ErrNoRows) {
 		writeError(w, http.StatusNotFound, "not_found", "Không tìm thấy bản sao.")
 		return
@@ -156,7 +157,7 @@ func (s *Server) deleteCopy(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusConflict, "copy_borrowed", "Không thể xoá bản sao đang được mượn.")
 		return
 	}
-	if _, err := s.pool.Exec(r.Context(), `DELETE FROM book_copies WHERE id = $1`, id); err != nil {
+	if _, err := s.pool.Exec(r.Context(), `DELETE FROM book_copies WHERE id = $1 AND school_id = $2`, id, schoolID(r)); err != nil {
 		s.internalError(w, r, err)
 		return
 	}

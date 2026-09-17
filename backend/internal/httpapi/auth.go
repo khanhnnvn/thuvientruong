@@ -22,6 +22,7 @@ type loginResponse struct {
 }
 
 func (s *Server) login(w http.ResponseWriter, r *http.Request) {
+	sc := mustSchool(r)
 	var req loginRequest
 	if !decodeJSON(w, r, &req) {
 		return
@@ -32,7 +33,12 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	row := s.pool.QueryRow(r.Context(), `SELECT `+userColumns+`, password_hash FROM users WHERE email = $1`, email)
+	// role <> 'super_admin' is implied by scoping to a school_id, but stated
+	// explicitly so a super_admin account can never authenticate through a
+	// tenant login endpoint even if it somehow shared a school_id.
+	row := s.pool.QueryRow(r.Context(),
+		`SELECT `+userColumns+`, password_hash FROM users WHERE email = $1 AND school_id = $2 AND role <> 'super_admin'`,
+		email, sc.ID)
 	var u User
 	var hash string
 	err := row.Scan(&u.ID, &u.Email, &u.Phone, &u.FullName, &u.Role, &u.Status, &u.ClassName, &u.StudentCode,
@@ -55,7 +61,7 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	claims := auth.Claims{UserID: u.ID, Email: u.Email, Role: u.Role, FullName: u.FullName}
+	claims := auth.Claims{UserID: u.ID, Email: u.Email, Role: u.Role, FullName: u.FullName, SchoolID: &sc.ID}
 	access, err := s.auth.IssueAccessToken(claims)
 	if err != nil {
 		s.internalError(w, r, err)
@@ -66,15 +72,15 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 		s.internalError(w, r, err)
 		return
 	}
-	s.setRefreshCookie(w, refresh)
+	s.setRefreshCookie(w, sc.Slug, refresh)
 	writeJSON(w, http.StatusOK, loginResponse{AccessToken: access, User: u})
 }
 
-func (s *Server) setRefreshCookie(w http.ResponseWriter, value string) {
+func (s *Server) setRefreshCookie(w http.ResponseWriter, slug, value string) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     refreshCookie,
 		Value:    value,
-		Path:     "/api/v1/auth",
+		Path:     "/api/v1/" + slug + "/auth",
 		MaxAge:   int(auth.RefreshTokenTTL / time.Second),
 		HttpOnly: true,
 		Secure:   s.cfg.Production(),
@@ -83,6 +89,7 @@ func (s *Server) setRefreshCookie(w http.ResponseWriter, value string) {
 }
 
 func (s *Server) refresh(w http.ResponseWriter, r *http.Request) {
+	sc := mustSchool(r)
 	c, err := r.Cookie(refreshCookie)
 	if err != nil {
 		writeError(w, http.StatusUnauthorized, "unauthorized", "Vui lòng đăng nhập lại.")
@@ -93,9 +100,13 @@ func (s *Server) refresh(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnauthorized, "unauthorized", "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.")
 		return
 	}
+	if claims.SchoolID == nil || *claims.SchoolID != sc.ID {
+		writeError(w, http.StatusForbidden, "school_mismatch", "Tài khoản này không thuộc trường đang truy cập.")
+		return
+	}
 
 	// Re-check the account is still active before minting a fresh access token.
-	row := s.pool.QueryRow(r.Context(), `SELECT `+userColumns+` FROM users WHERE id = $1`, claims.UserID)
+	row := s.pool.QueryRow(r.Context(), `SELECT `+userColumns+` FROM users WHERE id = $1 AND school_id = $2`, claims.UserID, sc.ID)
 	u, err := scanUser(row)
 	if errors.Is(err, pgx.ErrNoRows) || (err == nil && u.Status != "active") {
 		writeError(w, http.StatusUnauthorized, "unauthorized", "Tài khoản không còn hoạt động.")
@@ -106,7 +117,7 @@ func (s *Server) refresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fresh := auth.Claims{UserID: u.ID, Email: u.Email, Role: u.Role, FullName: u.FullName}
+	fresh := auth.Claims{UserID: u.ID, Email: u.Email, Role: u.Role, FullName: u.FullName, SchoolID: &sc.ID}
 	access, err := s.auth.IssueAccessToken(fresh)
 	if err != nil {
 		s.internalError(w, r, err)
@@ -116,10 +127,11 @@ func (s *Server) refresh(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) logout(w http.ResponseWriter, r *http.Request) {
+	sc := mustSchool(r)
 	http.SetCookie(w, &http.Cookie{
 		Name:     refreshCookie,
 		Value:    "",
-		Path:     "/api/v1/auth",
+		Path:     "/api/v1/" + sc.Slug + "/auth",
 		MaxAge:   -1,
 		HttpOnly: true,
 		Secure:   s.cfg.Production(),

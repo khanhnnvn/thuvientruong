@@ -51,6 +51,7 @@ func (s *Server) createBorrow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sid := schoolID(r)
 	ctx := r.Context()
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
@@ -60,7 +61,7 @@ func (s *Server) createBorrow(w http.ResponseWriter, r *http.Request) {
 	defer tx.Rollback(ctx)
 
 	var copyStatus string
-	if err := tx.QueryRow(ctx, `SELECT status FROM book_copies WHERE id = $1 FOR UPDATE`, req.CopyID).Scan(&copyStatus); errors.Is(err, pgx.ErrNoRows) {
+	if err := tx.QueryRow(ctx, `SELECT status FROM book_copies WHERE id = $1 AND school_id = $2 FOR UPDATE`, req.CopyID, sid).Scan(&copyStatus); errors.Is(err, pgx.ErrNoRows) {
 		writeError(w, http.StatusNotFound, "not_found", "Không tìm thấy bản sao.")
 		return
 	} else if err != nil {
@@ -74,7 +75,7 @@ func (s *Server) createBorrow(w http.ResponseWriter, r *http.Request) {
 
 	var userStatus string
 	var maxBorrow int
-	if err := tx.QueryRow(ctx, `SELECT status, max_borrow FROM users WHERE id = $1`, req.UserID).Scan(&userStatus, &maxBorrow); errors.Is(err, pgx.ErrNoRows) {
+	if err := tx.QueryRow(ctx, `SELECT status, max_borrow FROM users WHERE id = $1 AND school_id = $2`, req.UserID, sid).Scan(&userStatus, &maxBorrow); errors.Is(err, pgx.ErrNoRows) {
 		writeError(w, http.StatusNotFound, "not_found", "Không tìm thấy người mượn.")
 		return
 	} else if err != nil {
@@ -117,10 +118,10 @@ func (s *Server) createBorrow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	row := tx.QueryRow(ctx, `
-		INSERT INTO borrow_records (copy_id, user_id, approved_by, due_at)
-		VALUES ($1, $2, $3, $4)
+		INSERT INTO borrow_records (copy_id, user_id, approved_by, due_at, school_id)
+		VALUES ($1, $2, $3, $4, $5)
 		RETURNING `+borrowColumns,
-		req.CopyID, req.UserID, claims.UserID, dueAt)
+		req.CopyID, req.UserID, claims.UserID, dueAt, sid)
 	b, err := scanBorrow(row)
 	if err != nil {
 		s.internalError(w, r, err)
@@ -148,6 +149,7 @@ func (s *Server) returnBorrow(w http.ResponseWriter, r *http.Request) {
 	var req returnBorrowRequest
 	_ = decodeJSON(w, r, &req)
 
+	sid := schoolID(r)
 	ctx := r.Context()
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
@@ -156,7 +158,7 @@ func (s *Server) returnBorrow(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback(ctx)
 
-	row := tx.QueryRow(ctx, `SELECT `+borrowColumns+` FROM borrow_records WHERE id = $1 FOR UPDATE`, id)
+	row := tx.QueryRow(ctx, `SELECT `+borrowColumns+` FROM borrow_records WHERE id = $1 AND school_id = $2 FOR UPDATE`, id, sid)
 	b, err := scanBorrow(row)
 	if errors.Is(err, pgx.ErrNoRows) {
 		writeError(w, http.StatusNotFound, "not_found", "Không tìm thấy phiếu mượn.")
@@ -181,8 +183,8 @@ func (s *Server) returnBorrow(w http.ResponseWriter, r *http.Request) {
 	if now.After(b.DueAt) {
 		daysLate := int(math.Ceil(now.Sub(b.DueAt).Hours() / 24))
 		amount := fmt.Sprintf("%.2f", float64(daysLate)*fineRatePerDayVN)
-		if _, err := tx.Exec(ctx, `INSERT INTO fines (borrow_record_id, user_id, amount, reason) VALUES ($1, $2, $3, 'overdue')`,
-			b.ID, b.UserID, amount); err != nil {
+		if _, err := tx.Exec(ctx, `INSERT INTO fines (borrow_record_id, user_id, amount, reason, school_id) VALUES ($1, $2, $3, 'overdue', $4)`,
+			b.ID, b.UserID, amount, sid); err != nil {
 			s.internalError(w, r, err)
 			return
 		}
@@ -210,8 +212,8 @@ func (s *Server) returnBorrow(w http.ResponseWriter, r *http.Request) {
 		if req.Lost {
 			reason = "lost"
 		}
-		if _, err := tx.Exec(ctx, `INSERT INTO fines (borrow_record_id, user_id, amount, reason) VALUES ($1, $2, $3, $4)`,
-			b.ID, b.UserID, amount, reason); err != nil {
+		if _, err := tx.Exec(ctx, `INSERT INTO fines (borrow_record_id, user_id, amount, reason, school_id) VALUES ($1, $2, $3, $4, $5)`,
+			b.ID, b.UserID, amount, reason, sid); err != nil {
 			s.internalError(w, r, err)
 			return
 		}
@@ -232,7 +234,7 @@ func (s *Server) returnBorrow(w http.ResponseWriter, r *http.Request) {
 		}
 		// A copy is now available: promote the oldest pending reservation, if any.
 		var resID, resUserID string
-		err := tx.QueryRow(ctx, `SELECT id, user_id FROM reservations WHERE book_id = $1 AND status = 'pending' ORDER BY reserved_at LIMIT 1 FOR UPDATE`, bookID).
+		err := tx.QueryRow(ctx, `SELECT id, user_id FROM reservations WHERE book_id = $1 AND school_id = $2 AND status = 'pending' ORDER BY reserved_at LIMIT 1 FOR UPDATE`, bookID, sid).
 			Scan(&resID, &resUserID)
 		if err == nil {
 			expires := now.AddDate(0, 0, 3)
@@ -240,7 +242,7 @@ func (s *Server) returnBorrow(w http.ResponseWriter, r *http.Request) {
 				s.internalError(w, r, err)
 				return
 			}
-			if _, err := tx.Exec(ctx, `INSERT INTO notifications (user_id, type, message) VALUES ($1, 'reservation_ready', 'Sách bạn đặt trước đã sẵn sàng để nhận.')`, resUserID); err != nil {
+			if _, err := tx.Exec(ctx, `INSERT INTO notifications (user_id, type, message, school_id) VALUES ($1, 'reservation_ready', 'Sách bạn đặt trước đã sẵn sàng để nhận.', $2)`, resUserID, sid); err != nil {
 				s.internalError(w, r, err)
 				return
 			}
@@ -267,6 +269,7 @@ func (s *Server) returnBorrow(w http.ResponseWriter, r *http.Request) {
 func (s *Server) renewBorrow(w http.ResponseWriter, r *http.Request) {
 	id := pathParam(r, "id")
 	claims := mustClaims(r)
+	sid := schoolID(r)
 	ctx := r.Context()
 
 	tx, err := s.pool.Begin(ctx)
@@ -276,7 +279,7 @@ func (s *Server) renewBorrow(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback(ctx)
 
-	row := tx.QueryRow(ctx, `SELECT `+borrowColumns+` FROM borrow_records WHERE id = $1 FOR UPDATE`, id)
+	row := tx.QueryRow(ctx, `SELECT `+borrowColumns+` FROM borrow_records WHERE id = $1 AND school_id = $2 FOR UPDATE`, id, sid)
 	b, err := scanBorrow(row)
 	if errors.Is(err, pgx.ErrNoRows) {
 		writeError(w, http.StatusNotFound, "not_found", "Không tìm thấy phiếu mượn.")
@@ -359,8 +362,8 @@ func (s *Server) listBorrow(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	var conds []string
-	var args []any
+	args := []any{schoolID(r)}
+	conds := []string{"school_id = $1"}
 	if userID != "" {
 		args = append(args, userID)
 		conds = append(conds, fmt.Sprintf("user_id = $%d", len(args)))
@@ -372,10 +375,7 @@ func (s *Server) listBorrow(w http.ResponseWriter, r *http.Request) {
 	if overdue {
 		conds = append(conds, "status IN ('borrowed','overdue') AND due_at < now()")
 	}
-	where := ""
-	if len(conds) > 0 {
-		where = "WHERE " + strings.Join(conds, " AND ")
-	}
+	where := "WHERE " + strings.Join(conds, " AND ")
 
 	var total int
 	if err := s.pool.QueryRow(r.Context(), `SELECT COUNT(*) FROM borrow_records `+where, args...).Scan(&total); err != nil {
@@ -405,7 +405,7 @@ func (s *Server) listBorrow(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) getBorrow(w http.ResponseWriter, r *http.Request) {
 	id := pathParam(r, "id")
-	row := s.pool.QueryRow(r.Context(), `SELECT `+borrowColumns+` FROM borrow_records WHERE id = $1`, id)
+	row := s.pool.QueryRow(r.Context(), `SELECT `+borrowColumns+` FROM borrow_records WHERE id = $1 AND school_id = $2`, id, schoolID(r))
 	b, err := scanBorrow(row)
 	if errors.Is(err, pgx.ErrNoRows) {
 		writeError(w, http.StatusNotFound, "not_found", "Không tìm thấy phiếu mượn.")

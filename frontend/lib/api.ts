@@ -1,32 +1,84 @@
-const TOKEN_KEY = "lib_access_token";
+"use client";
+
+import { useCallback } from "react";
+import { useParams } from "next/navigation";
+
 const API_BASE = "/api/v1";
 
-export function getAccessToken(): string | null {
+/* ------------------------------------------------------------------ */
+/* Token storage                                                       */
+/*                                                                      */
+/* Two independent sessions can be active in the same browser:         */
+/*  - a "tenant" session (a user logged into one school, under /:slug) */
+/*  - a "super_admin" session (logged in at /super-admin)              */
+/* They use separate localStorage keys and separate cookies (set in    */
+/* lib/auth-context.tsx) so proxy.ts can tell them apart.              */
+/* ------------------------------------------------------------------ */
+
+function readLocalStorage(key: string): string | null {
   if (typeof window === "undefined") return null;
   try {
-    return window.localStorage.getItem(TOKEN_KEY);
+    return window.localStorage.getItem(key);
   } catch {
     return null;
   }
 }
 
-export function setAccessToken(token: string) {
+function writeLocalStorage(key: string, value: string) {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(TOKEN_KEY, token);
+    window.localStorage.setItem(key, value);
   } catch {
     // ignore (private mode / storage disabled)
   }
 }
 
-export function clearAccessToken() {
+function removeLocalStorage(key: string) {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.removeItem(TOKEN_KEY);
+    window.localStorage.removeItem(key);
   } catch {
     // ignore
   }
 }
+
+const TENANT_TOKEN_KEY = "lib_access_token";
+const TENANT_TOKEN_SLUG_KEY = "lib_access_token_slug";
+const SUPER_ADMIN_TOKEN_KEY = "sa_access_token";
+
+/** Tenant token is only considered valid when it was issued for the given slug. */
+export function getTenantAccessToken(slug: string): string | null {
+  const token = readLocalStorage(TENANT_TOKEN_KEY);
+  if (!token) return null;
+  if (readLocalStorage(TENANT_TOKEN_SLUG_KEY) !== slug) return null;
+  return token;
+}
+
+export function setTenantAccessToken(slug: string, token: string) {
+  writeLocalStorage(TENANT_TOKEN_KEY, token);
+  writeLocalStorage(TENANT_TOKEN_SLUG_KEY, slug);
+}
+
+export function clearTenantAccessToken() {
+  removeLocalStorage(TENANT_TOKEN_KEY);
+  removeLocalStorage(TENANT_TOKEN_SLUG_KEY);
+}
+
+export function getSuperAdminAccessToken(): string | null {
+  return readLocalStorage(SUPER_ADMIN_TOKEN_KEY);
+}
+
+export function setSuperAdminAccessToken(token: string) {
+  writeLocalStorage(SUPER_ADMIN_TOKEN_KEY, token);
+}
+
+export function clearSuperAdminAccessToken() {
+  removeLocalStorage(SUPER_ADMIN_TOKEN_KEY);
+}
+
+/* ------------------------------------------------------------------ */
+/* Core fetch                                                          */
+/* ------------------------------------------------------------------ */
 
 export class ApiError extends Error {
   status: number;
@@ -45,11 +97,19 @@ interface ApiFetchOptions extends Omit<RequestInit, "body"> {
   skipRefresh?: boolean;
 }
 
-let refreshPromise: Promise<string | null> | null = null;
+interface FetchScope {
+  getToken(): string | null;
+  setToken(token: string): void;
+  /** Full path (under API_BASE) used to silently refresh the access token, e.g. `/${slug}/auth/refresh`. */
+  refreshPath?: string;
+}
 
-async function refreshAccessToken(): Promise<string | null> {
+const refreshPromisesByPath = new Map<string, Promise<string | null>>();
+
+async function refreshToken(scope: FetchScope): Promise<string | null> {
+  if (!scope.refreshPath) return null;
   try {
-    const res = await fetch(`${API_BASE}/auth/refresh`, {
+    const res = await fetch(`${API_BASE}${scope.refreshPath}`, {
       method: "POST",
       credentials: "include",
     });
@@ -57,7 +117,7 @@ async function refreshAccessToken(): Promise<string | null> {
     const data = await res.json().catch(() => null);
     const token = data?.access_token;
     if (token) {
-      setAccessToken(token);
+      scope.setToken(token);
       return token;
     }
     return null;
@@ -66,7 +126,7 @@ async function refreshAccessToken(): Promise<string | null> {
   }
 }
 
-export async function apiFetch<T = unknown>(path: string, options: ApiFetchOptions = {}): Promise<T> {
+async function coreFetch<T = unknown>(fullPath: string, options: ApiFetchOptions, scope: FetchScope): Promise<T> {
   const { skipAuth, skipRefresh, body, headers, ...rest } = options;
 
   const run = async (bearer: string | null) => {
@@ -76,7 +136,7 @@ export async function apiFetch<T = unknown>(path: string, options: ApiFetchOptio
       ...(bearer && !skipAuth ? { Authorization: `Bearer ${bearer}` } : {}),
       ...(headers as Record<string, string> | undefined),
     };
-    return fetch(`${API_BASE}${path}`, {
+    return fetch(`${API_BASE}${fullPath}`, {
       ...rest,
       credentials: "include",
       headers: finalHeaders,
@@ -84,15 +144,16 @@ export async function apiFetch<T = unknown>(path: string, options: ApiFetchOptio
     });
   };
 
-  let res = await run(getAccessToken());
+  let res = await run(scope.getToken());
 
-  if (res.status === 401 && !skipAuth && !skipRefresh) {
-    if (!refreshPromise) {
-      refreshPromise = refreshAccessToken().finally(() => {
-        refreshPromise = null;
-      });
+  if (res.status === 401 && !skipAuth && !skipRefresh && scope.refreshPath) {
+    const key = scope.refreshPath;
+    let pending = refreshPromisesByPath.get(key);
+    if (!pending) {
+      pending = refreshToken(scope).finally(() => refreshPromisesByPath.delete(key));
+      refreshPromisesByPath.set(key, pending);
     }
-    const newToken = await refreshPromise;
+    const newToken = await pending;
     if (newToken) {
       res = await run(newToken);
     }
@@ -117,6 +178,55 @@ export async function apiFetch<T = unknown>(path: string, options: ApiFetchOptio
   }
 
   return data as T;
+}
+
+/* ------------------------------------------------------------------ */
+/* Public entry points                                                 */
+/* ------------------------------------------------------------------ */
+
+/** Calls a tenant-scoped endpoint: `/api/v1/{slug}{path}`. */
+export async function apiFetchTenant<T = unknown>(
+  slug: string,
+  path: string,
+  options: ApiFetchOptions = {}
+): Promise<T> {
+  const scope: FetchScope = {
+    getToken: () => getTenantAccessToken(slug),
+    setToken: (token) => setTenantAccessToken(slug, token),
+    refreshPath: `/${slug}/auth/refresh`,
+  };
+  return coreFetch<T>(`/${slug}${path}`, options, scope);
+}
+
+/** Calls a super-admin endpoint: `/api/v1/super-admin{path}`. */
+export async function apiFetchSuperAdmin<T = unknown>(path: string, options: ApiFetchOptions = {}): Promise<T> {
+  const scope: FetchScope = {
+    getToken: getSuperAdminAccessToken,
+    setToken: setSuperAdminAccessToken,
+  };
+  return coreFetch<T>(`/super-admin${path}`, options, scope);
+}
+
+/** Calls a fully public/global endpoint (no auth), e.g. `/schools/register`, `/schools/check-slug`. */
+export async function apiFetchPublic<T = unknown>(path: string, options: ApiFetchOptions = {}): Promise<T> {
+  const scope: FetchScope = { getToken: () => null, setToken: () => {} };
+  return coreFetch<T>(path, { ...options, skipAuth: true, skipRefresh: true }, scope);
+}
+
+/** Reads the `slug` route param for the current tenant route tree. */
+export function useSlug(): string {
+  const params = useParams<{ slug: string }>();
+  return String(params?.slug ?? "");
+}
+
+/**
+ * Client-component hook returning an `apiFetch(path, options)` function bound to the
+ * current tenant (`slug` taken from the URL). Drop-in replacement for the old,
+ * single-tenant `apiFetch` import used throughout app/[slug]/(app)/* pages.
+ */
+export function useApi() {
+  const slug = useSlug();
+  return useCallback(<T = unknown>(path: string, options?: ApiFetchOptions) => apiFetchTenant<T>(slug, path, options), [slug]);
 }
 
 /** Backend list endpoints may wrap items differently; normalize defensively. */

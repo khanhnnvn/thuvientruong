@@ -7,26 +7,27 @@ import (
 
 func (s *Server) reportOverview(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	sid := schoolID(r)
 	var totalBooks, totalCopies, borrowedNow, overdueNow, unpaidFinesCount int
 	var unpaidFinesTotal string
 
-	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM books`).Scan(&totalBooks); err != nil {
+	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM books WHERE school_id = $1`, sid).Scan(&totalBooks); err != nil {
 		s.internalError(w, r, err)
 		return
 	}
-	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM book_copies`).Scan(&totalCopies); err != nil {
+	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM book_copies WHERE school_id = $1`, sid).Scan(&totalCopies); err != nil {
 		s.internalError(w, r, err)
 		return
 	}
-	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM borrow_records WHERE status IN ('borrowed','overdue')`).Scan(&borrowedNow); err != nil {
+	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM borrow_records WHERE school_id = $1 AND status IN ('borrowed','overdue')`, sid).Scan(&borrowedNow); err != nil {
 		s.internalError(w, r, err)
 		return
 	}
-	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM borrow_records WHERE status IN ('borrowed','overdue') AND due_at < now()`).Scan(&overdueNow); err != nil {
+	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM borrow_records WHERE school_id = $1 AND status IN ('borrowed','overdue') AND due_at < now()`, sid).Scan(&overdueNow); err != nil {
 		s.internalError(w, r, err)
 		return
 	}
-	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*), COALESCE(SUM(amount),0) FROM fines WHERE status = 'unpaid'`).Scan(&unpaidFinesCount, &unpaidFinesTotal); err != nil {
+	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*), COALESCE(SUM(amount),0) FROM fines WHERE school_id = $1 AND status = 'unpaid'`, sid).Scan(&unpaidFinesCount, &unpaidFinesTotal); err != nil {
 		s.internalError(w, r, err)
 		return
 	}
@@ -59,8 +60,8 @@ func (s *Server) reportOverdue(w http.ResponseWriter, r *http.Request) {
 		JOIN users u ON u.id = br.user_id
 		JOIN book_copies bc ON bc.id = br.copy_id
 		JOIN books b ON b.id = bc.book_id
-		WHERE br.status IN ('borrowed','overdue') AND br.due_at < now()
-		ORDER BY br.due_at`)
+		WHERE br.school_id = $1 AND br.status IN ('borrowed','overdue') AND br.due_at < now()
+		ORDER BY br.due_at`, schoolID(r))
 	if err != nil {
 		s.internalError(w, r, err)
 		return
@@ -96,10 +97,10 @@ func (s *Server) reportPopularBooks(w http.ResponseWriter, r *http.Request) {
 		FROM borrow_records br
 		JOIN book_copies bc ON bc.id = br.copy_id
 		JOIN books b ON b.id = bc.book_id
-		WHERE br.borrowed_at >= $1 AND br.borrowed_at <= $2
+		WHERE br.school_id = $1 AND br.borrowed_at >= $2 AND br.borrowed_at <= $3
 		GROUP BY b.id, b.title
 		ORDER BY borrow_count DESC
-		LIMIT 20`, from, to)
+		LIMIT 20`, schoolID(r), from, to)
 	if err != nil {
 		s.internalError(w, r, err)
 		return

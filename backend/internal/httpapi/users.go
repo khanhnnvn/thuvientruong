@@ -21,8 +21,8 @@ func (s *Server) listUsers(w http.ResponseWriter, r *http.Request) {
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	page, pageSize, offset := pagination(r)
 
-	var conds []string
-	var args []any
+	args := []any{schoolID(r)}
+	conds := []string{"school_id = $1"}
 	if role != "" {
 		args = append(args, role)
 		conds = append(conds, fmt.Sprintf("role = $%d", len(args)))
@@ -31,10 +31,7 @@ func (s *Server) listUsers(w http.ResponseWriter, r *http.Request) {
 		args = append(args, "%"+q+"%")
 		conds = append(conds, fmt.Sprintf("(full_name ILIKE $%d OR email ILIKE $%d OR student_code ILIKE $%d)", len(args), len(args), len(args)))
 	}
-	where := ""
-	if len(conds) > 0 {
-		where = "WHERE " + strings.Join(conds, " AND ")
-	}
+	where := "WHERE " + strings.Join(conds, " AND ")
 
 	var total int
 	if err := s.pool.QueryRow(r.Context(), "SELECT COUNT(*) FROM users "+where, args...).Scan(&total); err != nil {
@@ -115,10 +112,10 @@ func (s *Server) createUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	row := s.pool.QueryRow(r.Context(), `
-		INSERT INTO users (email, phone, password_hash, full_name, role, class_name, student_code, max_borrow)
-		VALUES ($1, NULLIF($2,''), $3, $4, $5, NULLIF($6,''), NULLIF($7,''), $8)
+		INSERT INTO users (email, phone, password_hash, full_name, role, class_name, student_code, max_borrow, school_id)
+		VALUES ($1, NULLIF($2,''), $3, $4, $5, NULLIF($6,''), NULLIF($7,''), $8, $9)
 		RETURNING `+userColumns,
-		req.Email, req.Phone, hash, req.FullName, req.Role, req.ClassName, req.StudentCode, maxBorrow)
+		req.Email, req.Phone, hash, req.FullName, req.Role, req.ClassName, req.StudentCode, maxBorrow, schoolID(r))
 	u, err := scanUser(row)
 	if isUniqueViolation(err) {
 		writeError(w, http.StatusConflict, "email_taken", "Email đã được sử dụng.")
@@ -133,7 +130,7 @@ func (s *Server) createUser(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) getUser(w http.ResponseWriter, r *http.Request) {
 	id := pathParam(r, "id")
-	row := s.pool.QueryRow(r.Context(), `SELECT `+userColumns+` FROM users WHERE id = $1`, id)
+	row := s.pool.QueryRow(r.Context(), `SELECT `+userColumns+` FROM users WHERE id = $1 AND school_id = $2`, id, schoolID(r))
 	u, err := scanUser(row)
 	if errors.Is(err, pgx.ErrNoRows) {
 		writeError(w, http.StatusNotFound, "not_found", "Không tìm thấy người dùng.")
@@ -199,8 +196,8 @@ func (s *Server) updateUser(w http.ResponseWriter, r *http.Request) {
 		add("max_borrow", *req.MaxBorrow)
 	}
 
-	args = append(args, id)
-	query := fmt.Sprintf(`UPDATE users SET %s WHERE id = $%d RETURNING %s`, strings.Join(sets, ", "), len(args), userColumns)
+	args = append(args, id, schoolID(r))
+	query := fmt.Sprintf(`UPDATE users SET %s WHERE id = $%d AND school_id = $%d RETURNING %s`, strings.Join(sets, ", "), len(args)-1, len(args), userColumns)
 	row := s.pool.QueryRow(r.Context(), query, args...)
 	u, err := scanUser(row)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -236,7 +233,7 @@ func (s *Server) resetPassword(w http.ResponseWriter, r *http.Request) {
 		s.internalError(w, r, err)
 		return
 	}
-	tag, err := s.pool.Exec(r.Context(), `UPDATE users SET password_hash = $1, updated_at = now() WHERE id = $2`, hash, id)
+	tag, err := s.pool.Exec(r.Context(), `UPDATE users SET password_hash = $1, updated_at = now() WHERE id = $2 AND school_id = $3`, hash, id, schoolID(r))
 	if err != nil {
 		s.internalError(w, r, err)
 		return
@@ -274,8 +271,9 @@ func (s *Server) linkParent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sid := schoolID(r)
 	var studentRole, parentRole string
-	if err := s.pool.QueryRow(r.Context(), `SELECT role FROM users WHERE id = $1`, studentID).Scan(&studentRole); errors.Is(err, pgx.ErrNoRows) {
+	if err := s.pool.QueryRow(r.Context(), `SELECT role FROM users WHERE id = $1 AND school_id = $2`, studentID, sid).Scan(&studentRole); errors.Is(err, pgx.ErrNoRows) {
 		writeError(w, http.StatusNotFound, "not_found", "Không tìm thấy học sinh.")
 		return
 	} else if err != nil {
@@ -286,7 +284,7 @@ func (s *Server) linkParent(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnprocessableEntity, "invalid_request", "Tài khoản này không phải học sinh.")
 		return
 	}
-	if err := s.pool.QueryRow(r.Context(), `SELECT role FROM users WHERE id = $1`, req.ParentID).Scan(&parentRole); errors.Is(err, pgx.ErrNoRows) {
+	if err := s.pool.QueryRow(r.Context(), `SELECT role FROM users WHERE id = $1 AND school_id = $2`, req.ParentID, sid).Scan(&parentRole); errors.Is(err, pgx.ErrNoRows) {
 		writeError(w, http.StatusNotFound, "not_found", "Không tìm thấy phụ huynh.")
 		return
 	} else if err != nil {

@@ -10,7 +10,7 @@ import (
 
 func (s *Server) getMe(w http.ResponseWriter, r *http.Request) {
 	claims := mustClaims(r)
-	row := s.pool.QueryRow(r.Context(), `SELECT `+userColumns+` FROM users WHERE id = $1`, claims.UserID)
+	row := s.pool.QueryRow(r.Context(), `SELECT `+userColumns+` FROM users WHERE id = $1 AND school_id = $2`, claims.UserID, schoolID(r))
 	u, err := scanUser(row)
 	if errors.Is(err, pgx.ErrNoRows) {
 		writeError(w, http.StatusNotFound, "not_found", "Không tìm thấy người dùng.")
@@ -44,8 +44,8 @@ func (s *Server) getMyChildren(w http.ResponseWriter, r *http.Request) {
 			COALESCE((SELECT SUM(f.amount) FROM fines f WHERE f.user_id = u.id AND f.status = 'unpaid'), 0)
 		FROM parent_links pl
 		JOIN users u ON u.id = pl.student_id
-		WHERE pl.parent_id = $1
-		ORDER BY u.full_name`, claims.UserID)
+		WHERE pl.parent_id = $1 AND u.school_id = $2
+		ORDER BY u.full_name`, claims.UserID, schoolID(r))
 	if err != nil {
 		s.internalError(w, r, err)
 		return
@@ -69,12 +69,18 @@ func (s *Server) getMyChildren(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"children": children})
 }
 
-// isParentOf reports whether callerID (a parent) is linked to studentID.
+// isParentOf reports whether callerID (a parent) is linked to studentID,
+// scoped to the current school so a link can never be used to reach across
+// tenants even if the ids happened to collide.
 func (s *Server) isParentOf(r *http.Request, parentID, studentID string) (bool, error) {
 	var exists bool
 	err := s.pool.QueryRow(r.Context(),
-		`SELECT EXISTS (SELECT 1 FROM parent_links WHERE parent_id = $1 AND student_id = $2)`,
-		parentID, studentID).Scan(&exists)
+		`SELECT EXISTS (
+			SELECT 1 FROM parent_links pl
+			JOIN users s ON s.id = pl.student_id
+			WHERE pl.parent_id = $1 AND pl.student_id = $2 AND s.school_id = $3
+		)`,
+		parentID, studentID, schoolID(r)).Scan(&exists)
 	return exists, err
 }
 

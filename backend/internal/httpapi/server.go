@@ -43,112 +43,156 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/healthz", s.health)
 
 	r.Route("/api/v1", func(r chi.Router) {
-		r.Post("/auth/login", s.login)
-		r.Post("/auth/refresh", s.refresh)
-		r.Post("/auth/logout", s.logout)
+		// Global, tenant-less endpoints: public school registration/lookup and
+		// the single system-wide super_admin account.
+		r.Route("/schools", func(r chi.Router) {
+			r.Post("/register", s.registerSchool)
+			r.Get("/check-slug", s.checkSlug)
+			s.notFoundJSON(r)
+		})
 
-		r.Group(func(r chi.Router) {
-			r.Use(s.requireAuth)
+		r.Route("/super-admin", func(r chi.Router) {
+			r.Post("/login", s.superAdminLogin)
 
-			r.Get("/me", s.getMe)
-			r.Get("/me/children", s.getMyChildren)
-
-			// Users
-			r.Route("/users", func(r chi.Router) {
-				r.With(s.requireRole("admin", "librarian")).Get("/", s.listUsers)
-				r.With(s.requireRole("admin", "librarian")).Post("/", s.createUser)
-				r.With(s.requireRole("admin", "librarian")).Get("/{id}", s.getUser)
-				r.With(s.requireRole("admin")).Patch("/{id}", s.updateUser)
-				r.With(s.requireRole("admin")).Post("/{id}/reset-password", s.resetPassword)
-				r.With(s.requireRole("admin")).Post("/{id}/link-parent", s.linkParent)
+			r.Group(func(r chi.Router) {
+				r.Use(s.requireSuperAdmin)
+				r.Route("/schools", func(r chi.Router) {
+					r.Get("/", s.listSchools)
+					r.Get("/{id}", s.getSchoolByID)
+					r.Post("/{id}/approve", s.approveSchool)
+					r.Post("/{id}/reject", s.rejectSchool)
+					r.Post("/{id}/suspend", s.suspendSchool)
+					r.Post("/{id}/reactivate", s.reactivateSchool)
+					s.notFoundJSON(r)
+				})
 			})
+			s.notFoundJSON(r)
+		})
 
-			// Categories
-			r.Route("/categories", func(r chi.Router) {
-				r.Get("/", s.listCategories)
-				r.With(s.requireRole("admin", "librarian")).Post("/", s.createCategory)
-				r.With(s.requireRole("admin", "librarian")).Patch("/{id}", s.updateCategory)
-				r.With(s.requireRole("admin", "librarian")).Delete("/{id}", s.deleteCategory)
-			})
+		// Every business endpoint lives under /api/v1/{slug}/... and is scoped
+		// to that one school's data via resolveSchool + requireAuth below.
+		r.Route("/{slug}", func(r chi.Router) {
+			r.Use(s.resolveSchool)
+			s.notFoundJSON(r)
 
-			// Authors
-			r.Route("/authors", func(r chi.Router) {
-				r.Get("/", s.listAuthors)
-				r.With(s.requireRole("admin", "librarian")).Post("/", s.createAuthor)
-				r.With(s.requireRole("admin", "librarian")).Patch("/{id}", s.updateAuthor)
-				r.With(s.requireRole("admin", "librarian")).Delete("/{id}", s.deleteAuthor)
-			})
+			r.Post("/auth/login", s.login)
+			r.Post("/auth/refresh", s.refresh)
+			r.Post("/auth/logout", s.logout)
 
-			// Publishers
-			r.Route("/publishers", func(r chi.Router) {
-				r.Get("/", s.listPublishers)
-				r.With(s.requireRole("admin", "librarian")).Post("/", s.createPublisher)
-				r.With(s.requireRole("admin", "librarian")).Patch("/{id}", s.updatePublisher)
-				r.With(s.requireRole("admin", "librarian")).Delete("/{id}", s.deletePublisher)
-			})
+			r.Group(func(r chi.Router) {
+				r.Use(s.requireAuth)
 
-			// Books & copies
-			r.Route("/books", func(r chi.Router) {
-				r.Get("/", s.listBooks)
-				r.With(s.requireRole("admin", "librarian")).Post("/", s.createBook)
-				r.Get("/{id}", s.getBook)
-				r.With(s.requireRole("admin", "librarian")).Patch("/{id}", s.updateBook)
-				r.With(s.requireRole("admin", "librarian")).Delete("/{id}", s.deleteBook)
+				r.Get("/me", s.getMe)
+				r.Get("/me/children", s.getMyChildren)
 
-				r.Get("/{id}/copies", s.listCopiesForBook)
-				r.With(s.requireRole("admin", "librarian")).Post("/{id}/copies", s.createCopy)
-			})
-			r.Route("/copies", func(r chi.Router) {
-				r.With(s.requireRole("admin", "librarian")).Patch("/{id}", s.updateCopy)
-				r.With(s.requireRole("admin", "librarian")).Delete("/{id}", s.deleteCopy)
-			})
+				// Users
+				r.Route("/users", func(r chi.Router) {
+					r.With(s.requireRole("admin", "librarian")).Get("/", s.listUsers)
+					r.With(s.requireRole("admin", "librarian")).Post("/", s.createUser)
+					r.With(s.requireRole("admin", "librarian")).Get("/{id}", s.getUser)
+					r.With(s.requireRole("admin")).Patch("/{id}", s.updateUser)
+					r.With(s.requireRole("admin")).Post("/{id}/reset-password", s.resetPassword)
+					r.With(s.requireRole("admin")).Post("/{id}/link-parent", s.linkParent)
+				})
 
-			// Borrow
-			r.Route("/borrow", func(r chi.Router) {
-				r.With(s.requireRole("admin", "librarian")).Post("/", s.createBorrow)
-				r.Get("/", s.listBorrow)
-				r.Get("/{id}", s.getBorrow)
-				r.With(s.requireRole("admin", "librarian")).Post("/{id}/return", s.returnBorrow)
-				r.Post("/{id}/renew", s.renewBorrow)
-			})
+				// Categories
+				r.Route("/categories", func(r chi.Router) {
+					r.Get("/", s.listCategories)
+					r.With(s.requireRole("admin", "librarian")).Post("/", s.createCategory)
+					r.With(s.requireRole("admin", "librarian")).Patch("/{id}", s.updateCategory)
+					r.With(s.requireRole("admin", "librarian")).Delete("/{id}", s.deleteCategory)
+				})
 
-			// Reservations
-			r.Route("/reservations", func(r chi.Router) {
-				r.With(s.requireRole("teacher", "student")).Post("/", s.createReservation)
-				r.Patch("/{id}", s.updateReservation)
-				r.Get("/", s.listReservations)
-			})
+				// Authors
+				r.Route("/authors", func(r chi.Router) {
+					r.Get("/", s.listAuthors)
+					r.With(s.requireRole("admin", "librarian")).Post("/", s.createAuthor)
+					r.With(s.requireRole("admin", "librarian")).Patch("/{id}", s.updateAuthor)
+					r.With(s.requireRole("admin", "librarian")).Delete("/{id}", s.deleteAuthor)
+				})
 
-			// Fines
-			r.Route("/fines", func(r chi.Router) {
-				r.Get("/", s.listFines)
-				r.With(s.requireRole("admin", "librarian")).Post("/{id}/pay", s.payFine)
-				r.With(s.requireRole("admin", "librarian")).Post("/{id}/waive", s.waiveFine)
-			})
+				// Publishers
+				r.Route("/publishers", func(r chi.Router) {
+					r.Get("/", s.listPublishers)
+					r.With(s.requireRole("admin", "librarian")).Post("/", s.createPublisher)
+					r.With(s.requireRole("admin", "librarian")).Patch("/{id}", s.updatePublisher)
+					r.With(s.requireRole("admin", "librarian")).Delete("/{id}", s.deletePublisher)
+				})
 
-			// Notifications
-			r.Route("/notifications", func(r chi.Router) {
-				r.Get("/", s.listNotifications)
-				r.Post("/{id}/read", s.readNotification)
-			})
+				// Books & copies
+				r.Route("/books", func(r chi.Router) {
+					r.Get("/", s.listBooks)
+					r.With(s.requireRole("admin", "librarian")).Post("/", s.createBook)
+					r.Get("/{id}", s.getBook)
+					r.With(s.requireRole("admin", "librarian")).Patch("/{id}", s.updateBook)
+					r.With(s.requireRole("admin", "librarian")).Delete("/{id}", s.deleteBook)
 
-			// Reports
-			r.Route("/reports", func(r chi.Router) {
-				r.Use(s.requireRole("admin", "librarian"))
-				r.Get("/overview", s.reportOverview)
-				r.Get("/overdue", s.reportOverdue)
-				r.Get("/popular-books", s.reportPopularBooks)
+					r.Get("/{id}/copies", s.listCopiesForBook)
+					r.With(s.requireRole("admin", "librarian")).Post("/{id}/copies", s.createCopy)
+				})
+				r.Route("/copies", func(r chi.Router) {
+					r.With(s.requireRole("admin", "librarian")).Patch("/{id}", s.updateCopy)
+					r.With(s.requireRole("admin", "librarian")).Delete("/{id}", s.deleteCopy)
+				})
+
+				// Borrow
+				r.Route("/borrow", func(r chi.Router) {
+					r.With(s.requireRole("admin", "librarian")).Post("/", s.createBorrow)
+					r.Get("/", s.listBorrow)
+					r.Get("/{id}", s.getBorrow)
+					r.With(s.requireRole("admin", "librarian")).Post("/{id}/return", s.returnBorrow)
+					r.Post("/{id}/renew", s.renewBorrow)
+				})
+
+				// Reservations
+				r.Route("/reservations", func(r chi.Router) {
+					r.With(s.requireRole("teacher", "student")).Post("/", s.createReservation)
+					r.Patch("/{id}", s.updateReservation)
+					r.Get("/", s.listReservations)
+				})
+
+				// Fines
+				r.Route("/fines", func(r chi.Router) {
+					r.Get("/", s.listFines)
+					r.With(s.requireRole("admin", "librarian")).Post("/{id}/pay", s.payFine)
+					r.With(s.requireRole("admin", "librarian")).Post("/{id}/waive", s.waiveFine)
+				})
+
+				// Notifications
+				r.Route("/notifications", func(r chi.Router) {
+					r.Get("/", s.listNotifications)
+					r.Post("/{id}/read", s.readNotification)
+				})
+
+				// Reports
+				r.Route("/reports", func(r chi.Router) {
+					r.Use(s.requireRole("admin", "librarian"))
+					r.Get("/overview", s.reportOverview)
+					r.Get("/overdue", s.reportOverdue)
+					r.Get("/popular-books", s.reportPopularBooks)
+				})
 			})
 		})
 
-		r.NotFound(func(w http.ResponseWriter, r *http.Request) {
-			writeError(w, http.StatusNotFound, "not_found", "Không tìm thấy.")
-		})
-		r.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
-			writeError(w, http.StatusMethodNotAllowed, "method_not_allowed", "Phương thức không được hỗ trợ.")
-		})
+		s.notFoundJSON(r)
 	})
 	return r
+}
+
+// notFoundJSON registers JSON-formatted 404/405 fallbacks on r. chi gives
+// every sub-router (each r.Route/r.Group call) its own NotFoundHandler that
+// silently defaults to a plain-text 404 unless set explicitly, so this must
+// be called on every subrouter mounted below /api/v1, not just the top one,
+// or an unmatched path nested under e.g. /api/v1/schools/... or
+// /api/v1/{slug}/... would fall back to chi's default plain-text response
+// instead of our standard { "error": {...} } envelope.
+func (s *Server) notFoundJSON(r chi.Router) {
+	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		writeError(w, http.StatusNotFound, "not_found", "Không tìm thấy.")
+	})
+	r.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
+		writeError(w, http.StatusMethodNotAllowed, "method_not_allowed", "Phương thức không được hỗ trợ.")
+	})
 }
 
 func (s *Server) health(w http.ResponseWriter, r *http.Request) {

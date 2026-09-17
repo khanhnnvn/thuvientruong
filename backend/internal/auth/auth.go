@@ -27,12 +27,15 @@ var (
 	ErrWrongTokenType = errors.New("wrong token type")
 )
 
-// Claims is what every issued token carries about its owner.
+// Claims is what every issued token carries about its owner. SchoolID is nil
+// for super_admin (a system-wide account with no tenant) and set to the
+// owning school's id for every other role.
 type Claims struct {
-	UserID   string `json:"uid"`
-	Email    string `json:"email"`
-	Role     string `json:"role"`
-	FullName string `json:"name"`
+	UserID   string  `json:"uid"`
+	Email    string  `json:"email"`
+	Role     string  `json:"role"`
+	FullName string  `json:"name"`
+	SchoolID *string `json:"school_id,omitempty"`
 }
 
 type tokenClaims struct {

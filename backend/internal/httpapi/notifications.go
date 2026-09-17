@@ -9,7 +9,7 @@ import (
 
 func (s *Server) listNotifications(w http.ResponseWriter, r *http.Request) {
 	claims := mustClaims(r)
-	rows, err := s.pool.Query(r.Context(), `SELECT `+notificationColumns+` FROM notifications WHERE user_id = $1 ORDER BY created_at DESC`, claims.UserID)
+	rows, err := s.pool.Query(r.Context(), `SELECT `+notificationColumns+` FROM notifications WHERE user_id = $1 AND school_id = $2 ORDER BY created_at DESC`, claims.UserID, schoolID(r))
 	if err != nil {
 		s.internalError(w, r, err)
 		return

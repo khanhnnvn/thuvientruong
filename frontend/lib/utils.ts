@@ -39,6 +39,20 @@ export function daysUntil(dateStr?: string | null): number | null {
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
+/** Suggests a URL-safe school slug from a (Vietnamese) name: lowercase, no diacritics, `_`-separated. */
+export function slugify(input: string): string {
+  const noDiacritics = input
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D");
+  return noDiacritics
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
 export function displayName(entity?: { name?: unknown; full_name?: unknown; title?: unknown; email?: unknown } | null): string {
   if (!entity) return "—";
   return (

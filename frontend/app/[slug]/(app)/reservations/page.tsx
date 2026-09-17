@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { XCircle, CheckCircle2, PackageCheck } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { apiFetch, ApiError, unwrapList } from "@/lib/api";
+import { useApi, ApiError, unwrapList } from "@/lib/api";
 import type { Reservation } from "@/lib/types";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -14,6 +14,7 @@ import { displayName, formatDate } from "@/lib/utils";
 
 export default function ReservationsPage() {
   const { user } = useAuth();
+  const apiFetch = useApi();
   const toast = useToast();
   const isStaff = user?.role === "admin" || user?.role === "librarian";
 

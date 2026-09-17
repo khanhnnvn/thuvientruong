@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { BookMarked, LogOut, Menu, X } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { useSlug } from "@/lib/api";
 import { navForRole } from "@/lib/nav";
 import { ROLE_LABELS } from "@/lib/types";
 import { cn, displayName } from "@/lib/utils";
@@ -13,15 +14,16 @@ import { NotificationsMenu } from "@/components/NotificationsMenu";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, loading, logout } = useAuth();
+  const slug = useSlug();
   const pathname = usePathname();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
-      router.replace("/login");
+      router.replace(`/${slug}/login`);
     }
-  }, [loading, user, router]);
+  }, [loading, user, router, slug]);
 
   useEffect(() => {
     setSidebarOpen(false);
@@ -31,7 +33,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return <LoadingState label="Đang xác thực..." />;
   }
 
-  const items = navForRole(user.role);
+  const items = navForRole(user.role, slug);
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -54,6 +56,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
           <div className="min-w-0">
             <p className="truncate text-sm font-bold text-slate-900">Thư viện Trường học</p>
+            <p className="truncate text-xs text-slate-400">{slug}</p>
           </div>
           <button
             type="button"
@@ -67,7 +70,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
           {items.map((item) => {
-            const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+            const active = pathname === item.href || (item.hrefSuffix !== "" && pathname.startsWith(item.href));
             const Icon = item.icon;
             return (
               <Link

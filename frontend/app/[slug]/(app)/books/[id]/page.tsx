@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, use as usePromise } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { ArrowLeft, BookOpen, Plus, Pencil } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { apiFetch, ApiError, unwrapList } from "@/lib/api";
+import { useApi, ApiError, unwrapList } from "@/lib/api";
 import type { Book, BookCopy } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { Input, Label, FormField, Select, Textarea } from "@/components/ui/Input";
@@ -15,8 +16,9 @@ import { Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import { displayName } from "@/lib/utils";
 
-export default function BookDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = usePromise(params);
+export default function BookDetailPage() {
+  const { slug, id } = useParams<{ slug: string; id: string }>();
+  const apiFetch = useApi();
   const { user } = useAuth();
   const toast = useToast();
 
@@ -59,7 +61,7 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="space-y-6">
-      <Link href="/books" className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:underline">
+      <Link href={`/${slug}/books`} className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:underline">
         <ArrowLeft className="h-4 w-4" /> Quay lại danh mục sách
       </Link>
 
@@ -206,6 +208,7 @@ function Info({ label, value }: { label: string; value?: string | null }) {
 }
 
 function BorrowModal({ copy, onClose, onSuccess }: { copy: BookCopy; onClose: () => void; onSuccess: () => void }) {
+  const apiFetch = useApi();
   const [userId, setUserId] = useState("");
   const [dueAt, setDueAt] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -256,6 +259,7 @@ function BorrowModal({ copy, onClose, onSuccess }: { copy: BookCopy; onClose: ()
 }
 
 function AddCopyModal({ bookId, onClose, onSuccess }: { bookId: string; onClose: () => void; onSuccess: () => void }) {
+  const apiFetch = useApi();
   const [location, setLocation] = useState("");
   const [price, setPrice] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -304,6 +308,7 @@ function AddCopyModal({ bookId, onClose, onSuccess }: { bookId: string; onClose:
 }
 
 function EditBookForm({ book, onSaved }: { book: Book; onSaved: (b: Book) => void }) {
+  const apiFetch = useApi();
   const [title, setTitle] = useState(book.title || book.name || "");
   const [isbn, setIsbn] = useState(book.isbn || "");
   const [type, setType] = useState(book.type || "");

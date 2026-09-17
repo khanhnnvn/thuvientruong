@@ -3,7 +3,7 @@
 import { useEffect, useState, FormEvent } from "react";
 import { Plus, RotateCw, CheckCircle } from "lucide-react";
 import { RoleGate } from "@/components/RoleGate";
-import { apiFetch, ApiError, unwrapList } from "@/lib/api";
+import { useApi, ApiError, unwrapList } from "@/lib/api";
 import type { BorrowRecord } from "@/lib/types";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -25,6 +25,7 @@ export default function BorrowPage() {
 }
 
 function BorrowManager() {
+  const apiFetch = useApi();
   const toast = useToast();
   const [tab, setTab] = useState<Tab>("active");
   const [records, setRecords] = useState<BorrowRecord[]>([]);
@@ -179,6 +180,7 @@ function BorrowManager() {
 }
 
 function NewBorrowModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+  const apiFetch = useApi();
   const [copyId, setCopyId] = useState("");
   const [userId, setUserId] = useState("");
   const [dueAt, setDueAt] = useState("");

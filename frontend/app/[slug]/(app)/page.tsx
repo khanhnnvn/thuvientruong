@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { BookOpen, BookCopy as BookCopyIcon, AlertTriangle, Wallet, ArrowRight } from "lucide-react";
+import { BookOpen, BookCopy as BookCopyIcon, AlertTriangle, CheckCircle2, Wallet, ArrowRight, ArrowLeftRight, BookmarkCheck, Receipt } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useApi, useSlug, ApiError, unwrapList } from "@/lib/api";
 import type { BorrowRecord, ChildStatus, OverviewReport } from "@/lib/types";
@@ -23,6 +23,13 @@ export default function DashboardPage() {
   }
   return <SelfBorrowDashboard />;
 }
+
+const QUICK_LINKS = [
+  { suffix: "/borrow", label: "Mượn / Trả sách", icon: ArrowLeftRight },
+  { suffix: "/fines", label: "Quản lý phạt", icon: Receipt },
+  { suffix: "/reservations", label: "Đặt trước", icon: BookmarkCheck },
+  { suffix: "/books", label: "Danh mục sách", icon: BookOpen },
+];
 
 function OverviewDashboard() {
   const apiFetch = useApi();
@@ -48,43 +55,56 @@ function OverviewDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Tổng quan thư viện</h1>
-        <p className="mt-1 text-sm text-slate-500">Số liệu cập nhật theo thời gian thực từ hệ thống.</p>
+        <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Tổng quan thư viện</h1>
+        <p className="mt-1 text-sm text-ink-soft">Số liệu cập nhật theo thời gian thực từ hệ thống.</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Tổng số sách" value={data?.total_books ?? "—"} icon={BookOpen} tone="blue" />
-        <StatCard label="Đang được mượn" value={data?.borrowing_count ?? "—"} icon={BookCopyIcon} tone="green" />
-        <StatCard label="Quá hạn chưa trả" value={data?.overdue_count ?? "—"} icon={AlertTriangle} tone="red" />
-        <StatCard
-          label="Phạt chưa thu"
-          value={formatCurrency(data?.unpaid_fines_amount ?? 0)}
-          icon={Wallet}
-          tone="amber"
-        />
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-12">
+        {data && data.overdue ? (
+          <StatCard
+            size="lg"
+            tone="brick"
+            icon={AlertTriangle}
+            label="Quá hạn chưa trả"
+            value={data.overdue}
+            hint="Xử lý tại trang Mượn / Trả để tránh phát sinh thêm phạt."
+            className="lg:col-span-7"
+          />
+        ) : (
+          <StatCard
+            size="lg"
+            tone="green"
+            icon={CheckCircle2}
+            label="Quá hạn chưa trả"
+            value={0}
+            hint="Không có sách nào quá hạn — mọi lượt mượn đều trong hạn."
+            className="lg:col-span-7"
+          />
+        )}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:col-span-5 lg:grid-cols-1">
+          <StatCard label="Tổng số sách" value={data?.total_books ?? "—"} icon={BookOpen} tone="blue" />
+          <StatCard label="Đang được mượn" value={data?.currently_borrowed ?? "—"} icon={BookCopyIcon} tone="orange" />
+          <StatCard label="Phạt chưa thu" value={formatCurrency(Number(data?.unpaid_fines_total ?? 0))} icon={Wallet} tone="brick" />
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <QuickLinkCard href={`/${slug}/borrow`} title="Mượn / Trả sách" description="Xử lý cho mượn, trả sách, gia hạn" />
-        <QuickLinkCard href={`/${slug}/fines`} title="Quản lý phạt" description="Thu tiền phạt hoặc miễn phạt cho học sinh" />
-        <QuickLinkCard href={`/${slug}/reservations`} title="Đặt trước" description="Xử lý các yêu cầu đặt trước sách" />
-        <QuickLinkCard href={`/${slug}/books`} title="Danh mục sách" description="Tìm kiếm và quản lý kho sách" />
+      <div>
+        <p className="mb-3 font-display text-xs font-bold uppercase tracking-wide text-ink-faint">Lối tắt</p>
+        <div className="flex flex-wrap gap-2.5">
+          {QUICK_LINKS.map((q) => (
+            <Link
+              key={q.suffix}
+              href={`/${slug}${q.suffix}`}
+              className="group inline-flex items-center gap-2 rounded-xl border-2 border-ink/12 bg-paper-white px-4 py-2.5 text-sm font-semibold text-ink shadow-pin-sm transition-all hover:border-board-blue/40 hover:shadow-pin"
+            >
+              <q.icon className="h-4 w-4 text-board-blue-dark" />
+              {q.label}
+              <ArrowRight className="h-3.5 w-3.5 text-ink-faint transition-transform group-hover:translate-x-0.5" />
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
-  );
-}
-
-function QuickLinkCard({ href, title, description }: { href: string; title: string; description: string }) {
-  return (
-    <Link href={href}>
-      <Card className="flex items-center justify-between p-5 transition-shadow hover:shadow-md">
-        <div>
-          <p className="font-semibold text-slate-900">{title}</p>
-          <p className="mt-0.5 text-sm text-slate-500">{description}</p>
-        </div>
-        <ArrowRight className="h-5 w-5 text-slate-400" />
-      </Card>
-    </Link>
   );
 }
 
@@ -110,23 +130,38 @@ function SelfBorrowDashboard() {
 
   const active = records.filter((r) => !r.returned_at && r.status !== "returned");
   const overdueCount = active.filter((r) => isOverdue(r.due_at, r.returned_at)).length;
+  const hasOverdue = overdueCount > 0;
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Xin chào, {displayName(user)} 👋</h1>
-        <p className="mt-1 text-sm text-slate-500">Đây là tình trạng mượn sách của bạn.</p>
+        <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Xin chào, {displayName(user)}</h1>
+        <p className="mt-1 text-sm text-ink-soft">Đây là tình trạng mượn sách của bạn.</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <StatCard label="Sách đang mượn" value={active.length} icon={BookOpen} tone="blue" />
-        <StatCard label="Sách quá hạn" value={overdueCount} icon={AlertTriangle} tone="red" />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-12">
+        <StatCard
+          size="lg"
+          tone={hasOverdue ? "brick" : "blue"}
+          icon={hasOverdue ? AlertTriangle : BookOpen}
+          label={hasOverdue ? "Sách quá hạn" : "Sách đang mượn"}
+          value={hasOverdue ? overdueCount : active.length}
+          hint={hasOverdue ? "Mang trả sớm để tránh phát sinh phạt." : "Ghé trang Sách để tìm và đặt trước thêm."}
+          className="sm:col-span-7"
+        />
+        <StatCard
+          label={hasOverdue ? "Sách đang mượn" : "Sách quá hạn"}
+          value={hasOverdue ? active.length : overdueCount}
+          icon={hasOverdue ? BookOpen : AlertTriangle}
+          tone={hasOverdue ? "blue" : "brick"}
+          className="sm:col-span-5"
+        />
       </div>
 
       <Card>
         <CardHeader className="flex items-center justify-between">
           <CardTitle>Sách đang mượn</CardTitle>
-          <Link href={`/${slug}/books`} className="text-sm font-medium text-blue-600 hover:underline">
+          <Link href={`/${slug}/books`} className="text-sm font-semibold text-board-blue-dark hover:underline">
             Tìm sách để đọc thêm
           </Link>
         </CardHeader>
@@ -137,12 +172,12 @@ function SelfBorrowDashboard() {
             <EmptyState title="Bạn chưa mượn sách nào" description="Ghé trang Sách để tìm và đặt trước sách yêu thích." />
           )}
           {!loading && !error && active.length > 0 && (
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-ink/[0.07]">
               {active.map((r) => (
                 <li key={r.id} className="flex items-center justify-between gap-4 py-3">
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-slate-900">{r.book?.title || r.book?.name || "Sách"}</p>
-                    <p className="text-sm text-slate-500">Hạn trả: {formatDate(r.due_at)}</p>
+                    <p className="truncate font-semibold text-ink">{r.book?.title || r.book?.name || "Sách"}</p>
+                    <p className="tnum text-sm text-ink-soft">Hạn trả: {formatDate(r.due_at)}</p>
                   </div>
                   <StatusBadge status={isOverdue(r.due_at, r.returned_at) ? "overdue" : r.status || "borrowed"} />
                 </li>
@@ -175,8 +210,8 @@ function ParentDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Tình trạng thư viện của con</h1>
-        <p className="mt-1 text-sm text-slate-500">Theo dõi sách đang mượn và phạt (nếu có) của con bạn.</p>
+        <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Tình trạng thư viện của con</h1>
+        <p className="mt-1 text-sm text-ink-soft">Theo dõi sách đang mượn và phạt (nếu có) của con bạn.</p>
       </div>
 
       {loading && <LoadingState />}
@@ -187,35 +222,47 @@ function ParentDashboard() {
 
       {!loading &&
         !error &&
-        children.map((child) => (
-          <Card key={child.id}>
-            <CardHeader>
-              <CardTitle>
-                {displayName(child)} {child.class_name ? `— Lớp ${child.class_name}` : ""}
-              </CardTitle>
-            </CardHeader>
-            <CardBody>
-              <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <StatCard label="Đang mượn" value={child.borrowing_count ?? child.borrows?.length ?? 0} icon={BookOpen} tone="blue" />
-                <StatCard label="Quá hạn" value={child.overdue_count ?? 0} icon={AlertTriangle} tone="red" />
-                <StatCard label="Phạt chưa thu" value={formatCurrency(child.unpaid_fines_amount ?? 0)} icon={Wallet} tone="amber" />
-              </div>
-              {child.borrows && child.borrows.length > 0 && (
-                <ul className="divide-y divide-slate-100">
-                  {child.borrows.map((b) => (
-                    <li key={b.id} className="flex items-center justify-between gap-4 py-2.5">
-                      <p className="min-w-0 truncate text-sm font-medium text-slate-800">{b.book?.title || b.book?.name || "Sách"}</p>
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs text-slate-500">Hạn: {formatDate(b.due_at)}</span>
-                        <StatusBadge status={isOverdue(b.due_at, b.returned_at) ? "overdue" : b.status || "borrowed"} />
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardBody>
-          </Card>
-        ))}
+        children.map((child) => {
+          const overdue = child.overdue_count ?? 0;
+          const unpaid = Number(child.unpaid_fines_total ?? 0);
+          return (
+            <Card key={child.id}>
+              <CardHeader className="flex flex-wrap items-center justify-between gap-3">
+                <CardTitle>
+                  {displayName(child)} {child.class_name ? `— Lớp ${child.class_name}` : ""}
+                </CardTitle>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                  <span className="text-ink-soft">
+                    Đang mượn <span className="tnum font-display font-bold text-ink">{child.active_borrows ?? child.borrows?.length ?? 0}</span>
+                  </span>
+                  <span className={overdue > 0 ? "font-semibold text-board-brick-dark" : "text-ink-soft"}>
+                    Quá hạn <span className="tnum font-display font-bold">{overdue}</span>
+                  </span>
+                  <span className={unpaid > 0 ? "font-semibold text-board-brick-dark" : "text-ink-soft"}>
+                    Phạt chưa thu <span className="tnum font-display font-bold">{formatCurrency(unpaid)}</span>
+                  </span>
+                </div>
+              </CardHeader>
+              <CardBody>
+                {child.borrows && child.borrows.length > 0 ? (
+                  <ul className="divide-y divide-ink/[0.07]">
+                    {child.borrows.map((b) => (
+                      <li key={b.id} className="flex items-center justify-between gap-4 py-2.5">
+                        <p className="min-w-0 truncate text-sm font-semibold text-ink">{b.book?.title || b.book?.name || "Sách"}</p>
+                        <div className="flex items-center gap-3">
+                          <span className="tnum text-xs text-ink-soft">Hạn: {formatDate(b.due_at)}</span>
+                          <StatusBadge status={isOverdue(b.due_at, b.returned_at) ? "overdue" : b.status || "borrowed"} />
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-ink-faint">Hiện không mượn sách nào.</p>
+                )}
+              </CardBody>
+            </Card>
+          );
+        })}
     </div>
   );
 }

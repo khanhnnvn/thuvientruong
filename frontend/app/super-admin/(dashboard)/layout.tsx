@@ -21,19 +21,19 @@ export default function SuperAdminDashboardLayout({ children }: { children: Reac
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="flex h-16 items-center gap-3 border-b border-slate-200 bg-white px-4 lg:px-8">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-900 text-white">
+    <div className="min-h-screen bg-system-ink">
+      <header className="flex h-16 items-center gap-3 border-b border-paper-white/10 bg-system-ink px-4 lg:px-8">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-board-blue-dark text-paper-white">
           <ShieldCheck className="h-5 w-5" />
         </div>
         <div className="min-w-0">
-          <p className="truncate text-sm font-bold text-slate-900">Quản trị hệ thống</p>
-          <p className="truncate text-xs text-slate-500">{user.email}</p>
+          <p className="truncate font-display text-sm font-bold tracking-tight text-paper-white">Quản trị hệ thống</p>
+          <p className="truncate text-xs text-paper-white/50">{user.email}</p>
         </div>
         <button
           type="button"
           onClick={() => logout()}
-          className="ml-auto flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600"
+          className="ml-auto flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-paper-white/70 hover:bg-board-brick/15 hover:text-[#ffb4a0]"
         >
           <LogOut className="h-4 w-4" /> Đăng xuất
         </button>

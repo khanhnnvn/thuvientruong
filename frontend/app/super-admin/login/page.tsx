@@ -32,26 +32,26 @@ export default function SuperAdminLoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-system-ink px-4">
       <div className="w-full max-w-md">
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-800 text-white shadow-lg">
+          <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-board-blue-dark text-paper-white shadow-pin">
             <ShieldCheck className="h-7 w-7" />
           </div>
-          <h1 className="text-2xl font-bold text-white">Quản trị hệ thống</h1>
-          <p className="mt-1 text-sm text-slate-400">Đăng nhập tài khoản super admin</p>
+          <h1 className="font-display text-2xl font-bold tracking-tight text-paper-white">Quản trị hệ thống</h1>
+          <p className="mt-1 text-sm text-paper-white/60">Đăng nhập tài khoản super admin</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-sm">
+        <form onSubmit={handleSubmit} className="rounded-2xl border border-paper-white/10 bg-system-ink-soft p-6 shadow-pin-lg">
           {error && (
-            <div className="mb-4 rounded-lg border border-red-900 bg-red-950 px-3 py-2 text-sm text-red-300">
+            <div className="mb-4 rounded-lg border-2 border-board-brick/40 bg-board-brick/15 px-3 py-2 text-sm font-medium text-[#ffb4a0]">
               {error}
             </div>
           )}
           <FormField>
-            <Label htmlFor="email" required>
-              Email
-            </Label>
+            <label htmlFor="email" className="mb-1.5 block text-sm font-semibold text-paper-white/85">
+              Email <span className="ml-0.5 text-board-brick">*</span>
+            </label>
             <Input
               id="email"
               type="email"
@@ -59,12 +59,13 @@ export default function SuperAdminLoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              className="border-paper-white/15 bg-system-ink text-paper-white placeholder:text-paper-white/30 focus:border-board-blue"
             />
           </FormField>
           <FormField>
-            <Label htmlFor="password" required>
-              Mật khẩu
-            </Label>
+            <label htmlFor="password" className="mb-1.5 block text-sm font-semibold text-paper-white/85">
+              Mật khẩu <span className="ml-0.5 text-board-brick">*</span>
+            </label>
             <Input
               id="password"
               type="password"
@@ -72,6 +73,7 @@ export default function SuperAdminLoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              className="border-paper-white/15 bg-system-ink text-paper-white placeholder:text-paper-white/30 focus:border-board-blue"
             />
           </FormField>
           <Button type="submit" className="w-full" loading={loading} size="lg">

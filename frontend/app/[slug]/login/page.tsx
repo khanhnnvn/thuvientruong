@@ -42,20 +42,22 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-white to-emerald-50 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-paper px-4">
       <div className="w-full max-w-md">
-        <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-200">
+        <div className="mb-6 flex flex-col items-center text-center">
+          <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-board-blue-dark text-paper-white shadow-pin">
             <BookMarked className="h-7 w-7" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">Thư viện Trường học</h1>
-          <p className="mt-1 text-sm text-slate-500">Đăng nhập để quản lý mượn / trả sách</p>
-          <p className="mt-0.5 text-xs font-medium text-slate-400">Mã trường: {slug}</p>
+          <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Thư viện Trường học</h1>
+          <p className="mt-1 text-sm text-ink-soft">Đăng nhập để quản lý mượn / trả sách</p>
+          <p className="mt-3 inline-flex items-center rounded-full bg-board-blue/12 px-3 py-1 text-xs font-bold uppercase tracking-wide text-board-blue-dark">
+            Mã trường: {slug}
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <form onSubmit={handleSubmit} className="rounded-2xl border-2 border-ink/12 bg-paper-white p-6 shadow-pin-lg">
           {error && (
-            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <div className="mb-4 rounded-lg border-2 border-board-brick/25 bg-board-brick/[0.06] px-3 py-2 text-sm font-medium text-board-brick-dark">
               {error}
             </div>
           )}
@@ -91,7 +93,7 @@ function LoginForm() {
             Đăng nhập
           </Button>
         </form>
-        <p className="mt-6 text-center text-xs text-slate-400">
+        <p className="mt-6 text-center text-xs text-ink-faint">
           © {new Date().getFullYear()} Thư viện Trường học. Liên hệ thủ thư nếu quên mật khẩu.
         </p>
       </div>
@@ -103,8 +105,8 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center">
-          <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+        <div className="flex min-h-screen items-center justify-center bg-paper">
+          <Loader2 className="h-6 w-6 animate-spin text-board-blue-dark" />
         </div>
       }
     >

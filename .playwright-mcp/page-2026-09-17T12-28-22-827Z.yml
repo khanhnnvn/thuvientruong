@@ -1,0 +1,60 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e22]:
+    - complementary [ref=e23]:
+      - generic [ref=e29]:
+        - paragraph [ref=e30]: Thư viện Trường học
+        - paragraph [ref=e31]: truong-demo
+      - navigation [ref=e32]:
+        - link "Tổng quan" [ref=e33] [cursor=pointer]:
+          - /url: /truong-demo
+        - link "Sách" [ref=e39] [cursor=pointer]:
+          - /url: /truong-demo/books
+        - link "Mượn / Trả" [ref=e42] [cursor=pointer]:
+          - /url: /truong-demo/borrow
+        - link "Đặt trước" [ref=e46] [cursor=pointer]:
+          - /url: /truong-demo/reservations
+        - link "Phạt" [ref=e50] [cursor=pointer]:
+          - /url: /truong-demo/fines
+      - generic [ref=e54]:
+        - generic [ref=e55]:
+          - generic [ref=e56]: "N"
+          - generic [ref=e57]:
+            - paragraph [ref=e58]: Nguyễn Thị Thủ Thư
+            - paragraph [ref=e59]: Thủ thư
+        - button "Đăng xuất" [ref=e60]
+    - generic [ref=e64]:
+      - banner [ref=e65]:
+        - button "Thông báo" [ref=e67]
+      - main [ref=e71]:
+        - generic [ref=e72]:
+          - generic [ref=e73]:
+            - heading "Tổng quan thư viện" [level=1] [ref=e74]
+            - paragraph [ref=e75]: Số liệu cập nhật theo thời gian thực từ hệ thống.
+          - generic [ref=e76]:
+            - generic [ref=e77]:
+              - generic [ref=e84]:
+                - paragraph [ref=e85]: Quá hạn chưa trả
+                - paragraph [ref=e86]: "0"
+              - paragraph [ref=e87]: Không có sách nào quá hạn — mọi lượt mượn đều trong hạn.
+            - generic [ref=e88]:
+              - generic [ref=e93]:
+                - paragraph [ref=e94]: Tổng số sách
+                - paragraph [ref=e95]: "3"
+              - generic [ref=e102]:
+                - paragraph [ref=e103]: Đang được mượn
+                - paragraph [ref=e104]: "0"
+              - generic [ref=e110]:
+                - paragraph [ref=e111]: Phạt chưa thu
+                - paragraph [ref=e112]: 0 ₫
+          - generic [ref=e113]:
+            - paragraph [ref=e114]: Lối tắt
+            - generic [ref=e115]:
+              - link "Mượn / Trả sách" [ref=e116] [cursor=pointer]:
+                - /url: /truong-demo/borrow
+              - link "Quản lý phạt" [ref=e122] [cursor=pointer]:
+                - /url: /truong-demo/fines
+              - link "Đặt trước" [ref=e128] [cursor=pointer]:
+                - /url: /truong-demo/reservations
+              - link "Danh mục sách" [ref=e134] [cursor=pointer]:
+                - /url: /truong-demo/books
+  - alert [ref=e21]

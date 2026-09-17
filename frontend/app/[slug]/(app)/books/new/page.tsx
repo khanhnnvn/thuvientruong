@@ -86,7 +86,7 @@ function NewBookForm() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <Link href={`/${slug}/books`} className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:underline">
+      <Link href={`/${slug}/books`} className="inline-flex items-center gap-1 text-sm font-semibold text-board-blue-dark hover:underline">
         <ArrowLeft className="h-4 w-4" /> Quay lại danh mục sách
       </Link>
 
@@ -96,7 +96,7 @@ function NewBookForm() {
         </CardHeader>
         <CardBody>
           <form onSubmit={handleSubmit}>
-            {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+            {error && <div className="mb-4 rounded-lg border-2 border-board-brick/25 bg-board-brick/[0.06] px-3 py-2 text-sm font-medium text-board-brick-dark">{error}</div>}
 
             <FormField>
               <Label htmlFor="title" required>

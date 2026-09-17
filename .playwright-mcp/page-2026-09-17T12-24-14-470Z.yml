@@ -1,0 +1,14 @@
+- generic [active] [ref=f6e1]:
+  - generic [ref=f6e3]:
+    - generic [ref=f6e4]:
+      - heading "Quản trị hệ thống" [level=1] [ref=f6e9]
+      - paragraph [ref=f6e10]: Đăng nhập tài khoản super admin
+    - generic [ref=f6e11]:
+      - generic [ref=f6e12]:
+        - generic [ref=f6e13]: Email *
+        - textbox "Email *" [ref=f6e14]
+      - generic [ref=f6e15]:
+        - generic [ref=f6e16]: Mật khẩu *
+        - textbox "Mật khẩu *" [ref=f6e17]
+      - button "Đăng nhập" [ref=f6e18]
+  - alert [ref=f6e19]

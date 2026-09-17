@@ -57,22 +57,22 @@ export default function BookDetailPage() {
   if (error || !book) return <ErrorState message={error || "Không tìm thấy sách."} onRetry={load} />;
 
   const copies = book.copies ?? [];
-  const hasAvailable = copies.some((c) => c.status === "available") || (book.available_count ?? 0) > 0;
+  const hasAvailable = copies.some((c) => c.status === "available") || (book.available_copies ?? 0) > 0;
 
   return (
     <div className="space-y-6">
-      <Link href={`/${slug}/books`} className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:underline">
+      <Link href={`/${slug}/books`} className="inline-flex items-center gap-1 text-sm font-semibold text-board-blue-dark hover:underline">
         <ArrowLeft className="h-4 w-4" /> Quay lại danh mục sách
       </Link>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-1">
-          <div className="flex aspect-[3/4] items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+          <div className="flex aspect-[3/4] items-center justify-center overflow-hidden rounded-2xl border-2 border-ink/12 bg-paper shadow-pin-sm">
             {book.cover_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={book.cover_url} alt={book.title || "Bìa sách"} className="h-full w-full object-cover" />
             ) : (
-              <BookOpen className="h-16 w-16 text-slate-300" />
+              <BookOpen className="h-16 w-16 text-ink/20" />
             )}
           </div>
         </div>
@@ -95,10 +95,10 @@ export default function BookDetailPage() {
                   <Info label="Thể loại" value={displayName(book.category)} />
                   <Info label="ISBN" value={book.isbn} />
                   <Info label="Loại ấn phẩm" value={book.type} />
-                  <Info label="Số bản còn sẵn" value={String(book.available_count ?? "—")} />
+                  <Info label="Số bản còn sẵn" value={String(book.available_copies ?? "—")} />
                   <div className="sm:col-span-2">
-                    <dt className="mb-1 text-xs font-medium uppercase text-slate-400">Mô tả</dt>
-                    <dd className="whitespace-pre-line text-sm text-slate-700">{book.description || "Chưa có mô tả."}</dd>
+                    <dt className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-faint">Mô tả</dt>
+                    <dd className="whitespace-pre-line text-sm leading-relaxed text-ink">{book.description || "Chưa có mô tả."}</dd>
                   </div>
                 </dl>
               ) : (
@@ -113,7 +113,7 @@ export default function BookDetailPage() {
                 <Button onClick={handleReserve}>Đặt trước sách này</Button>
               )}
               {canReserve && hasAvailable && (
-                <span className="text-sm text-emerald-600">Sách hiện còn bản sẵn có, đến thư viện để mượn.</span>
+                <span className="text-sm font-semibold text-board-green-dark">Sách hiện còn bản sẵn có, đến thư viện để mượn.</span>
               )}
             </div>
           )}
@@ -136,29 +136,29 @@ export default function BookDetailPage() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[520px] text-left text-sm">
                 <thead>
-                  <tr className="border-b border-slate-100 text-xs uppercase text-slate-400">
-                    <th className="py-2 pr-4">Mã bản sao</th>
-                    <th className="py-2 pr-4">Vị trí</th>
-                    <th className="py-2 pr-4">Trạng thái</th>
-                    {canBorrowFor && <th className="py-2 pr-4 text-right">Thao tác</th>}
+                  <tr className="divide-x divide-ink/15 border-b-2 border-ink/20 bg-paper text-xs font-semibold uppercase tracking-wide text-ink-faint">
+                    <th className="px-4 py-2">Mã bản sao</th>
+                    <th className="px-4 py-2">Vị trí</th>
+                    <th className="px-4 py-2">Trạng thái</th>
+                    {canBorrowFor && <th className="px-4 py-2 text-right">Thao tác</th>}
                   </tr>
                 </thead>
                 <tbody>
                   {copies.map((c) => (
-                    <tr key={c.id} className="border-b border-slate-50 last:border-0">
-                      <td className="py-2.5 pr-4 font-medium text-slate-800">{c.copy_code || c.id}</td>
-                      <td className="py-2.5 pr-4 text-slate-600">{c.location || "—"}</td>
-                      <td className="py-2.5 pr-4">
+                    <tr key={c.id} className="divide-x divide-ink/10 border-b border-ink/12 last:border-0 hover:bg-ink/[0.02]">
+                      <td className="px-4 py-2.5 font-semibold text-ink">{c.copy_code || c.id}</td>
+                      <td className="px-4 py-2.5 text-ink-soft">{c.location || "—"}</td>
+                      <td className="px-4 py-2.5">
                         <StatusBadge status={c.status} />
                       </td>
                       {canBorrowFor && (
-                        <td className="py-2.5 pr-4 text-right">
+                        <td className="px-4 py-2.5 text-right">
                           {c.status === "available" ? (
                             <Button size="sm" onClick={() => setBorrowModal(c)}>
                               Cho mượn
                             </Button>
                           ) : (
-                            <span className="text-xs text-slate-400">—</span>
+                            <span className="text-xs text-ink-faint">—</span>
                           )}
                         </td>
                       )}
@@ -201,8 +201,8 @@ export default function BookDetailPage() {
 function Info({ label, value }: { label: string; value?: string | null }) {
   return (
     <div>
-      <dt className="text-xs font-medium uppercase text-slate-400">{label}</dt>
-      <dd className="text-sm text-slate-800">{value || "—"}</dd>
+      <dt className="text-xs font-semibold uppercase tracking-wide text-ink-faint">{label}</dt>
+      <dd className="text-sm text-ink">{value || "—"}</dd>
     </div>
   );
 }
@@ -234,7 +234,7 @@ function BorrowModal({ copy, onClose, onSuccess }: { copy: BookCopy; onClose: ()
   return (
     <Modal open onClose={onClose} title={`Cho mượn — bản sao ${copy.copy_code || copy.id}`}>
       <form onSubmit={handleSubmit}>
-        {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+        {error && <div className="mb-4 rounded-lg border-2 border-board-brick/25 bg-board-brick/[0.06] px-3 py-2 text-sm font-medium text-board-brick-dark">{error}</div>}
         <FormField>
           <Label htmlFor="user_id" required>
             Mã hoặc email người mượn
@@ -285,7 +285,7 @@ function AddCopyModal({ bookId, onClose, onSuccess }: { bookId: string; onClose:
   return (
     <Modal open onClose={onClose} title="Thêm bản sao mới">
       <form onSubmit={handleSubmit}>
-        {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+        {error && <div className="mb-4 rounded-lg border-2 border-board-brick/25 bg-board-brick/[0.06] px-3 py-2 text-sm font-medium text-board-brick-dark">{error}</div>}
         <FormField>
           <Label htmlFor="location">Vị trí lưu trữ (kệ, phòng...)</Label>
           <Input id="location" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="VD: Kệ A1" />
@@ -336,7 +336,7 @@ function EditBookForm({ book, onSaved }: { book: Book; onSaved: (b: Book) => voi
 
   return (
     <form onSubmit={handleSubmit}>
-      {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+      {error && <div className="mb-4 rounded-lg border-2 border-board-brick/25 bg-board-brick/[0.06] px-3 py-2 text-sm font-medium text-board-brick-dark">{error}</div>}
       <FormField>
         <Label htmlFor="title" required>
           Tên sách

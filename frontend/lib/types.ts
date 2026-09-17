@@ -65,7 +65,7 @@ export interface Book {
   publisher?: Publisher;
   publisher_id?: string;
   copies?: BookCopy[];
-  available_count?: number;
+  available_copies?: number;
   total_copies?: number;
   [key: string]: unknown;
 }
@@ -74,9 +74,12 @@ export interface BorrowRecord {
   id: string;
   copy_id?: string;
   copy?: BookCopy;
+  copy_code?: string;
   book?: Book;
+  book_title?: string;
   user_id?: string;
   user?: User;
+  user_name?: string;
   borrowed_at?: string;
   due_at?: string;
   returned_at?: string;
@@ -122,9 +125,9 @@ export interface NotificationItem {
 export interface OverviewReport {
   total_books?: number;
   total_copies?: number;
-  borrowing_count?: number;
-  overdue_count?: number;
-  unpaid_fines_amount?: number;
+  currently_borrowed?: number;
+  overdue?: number;
+  unpaid_fines_total?: string | number;
   unpaid_fines_count?: number;
   [key: string]: unknown;
 }
@@ -134,9 +137,9 @@ export interface ChildStatus {
   name?: string;
   full_name?: string;
   class_name?: string;
-  borrowing_count?: number;
+  active_borrows?: number;
   overdue_count?: number;
-  unpaid_fines_amount?: number;
+  unpaid_fines_total?: string | number;
   borrows?: BorrowRecord[];
   fines?: Fine[];
   [key: string]: unknown;

@@ -13,18 +13,25 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   loading?: boolean;
 }
 
+// Solid board-marker fills read as pinned, decisive controls rather than a
+// generic SaaS blue button — real offset shadow, no zero-blur "neobrutalist"
+// block shadow.
 const VARIANT_CLASSES: Record<Variant, string> = {
-  primary: "bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-500 shadow-sm",
-  secondary: "bg-emerald-600 text-white hover:bg-emerald-700 focus-visible:ring-emerald-500 shadow-sm",
-  danger: "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500 shadow-sm",
-  outline: "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus-visible:ring-slate-400",
-  ghost: "bg-transparent text-slate-600 hover:bg-slate-100 focus-visible:ring-slate-400",
+  primary:
+    "bg-board-blue-dark text-paper-white shadow-pin-sm hover:bg-[#234867] hover:shadow-pin active:translate-y-px active:shadow-pin-sm focus-visible:outline-board-blue",
+  secondary:
+    "bg-board-green-dark text-paper-white shadow-pin-sm hover:bg-[#3c5233] hover:shadow-pin active:translate-y-px active:shadow-pin-sm focus-visible:outline-board-green",
+  danger:
+    "bg-board-brick-dark text-paper-white shadow-pin-sm hover:bg-[#7a301a] hover:shadow-pin active:translate-y-px active:shadow-pin-sm focus-visible:outline-board-brick",
+  outline:
+    "border-2 border-ink/20 bg-paper-white text-ink hover:border-ink/35 hover:bg-paper active:translate-y-px",
+  ghost: "bg-transparent text-ink-soft hover:bg-ink/[0.06] hover:text-ink",
 };
 
 const SIZE_CLASSES: Record<Size, string> = {
   sm: "h-8 px-3 text-sm",
   md: "h-10 px-4 text-sm",
-  lg: "h-11 px-5 text-base",
+  lg: "h-12 px-6 text-base",
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -34,7 +41,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         disabled={disabled || loading}
         className={cn(
-          "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60",
+          "inline-flex shrink-0 items-center justify-center gap-2 rounded-xl font-display font-semibold tracking-tight transition-all duration-150 focus-visible:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-55 disabled:shadow-none disabled:active:translate-y-0",
           VARIANT_CLASSES[variant],
           SIZE_CLASSES[size],
           className

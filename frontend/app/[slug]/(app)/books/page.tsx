@@ -68,8 +68,8 @@ export default function BooksPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Danh mục sách</h1>
-          <p className="mt-1 text-sm text-slate-500">Tìm kiếm và tra cứu kho sách của thư viện.</p>
+          <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Danh mục sách</h1>
+          <p className="mt-1 text-sm text-ink-soft">Tìm kiếm và tra cứu kho sách của thư viện.</p>
         </div>
         {canManage && (
           <Link href={`/${slug}/books/new`}>
@@ -81,9 +81,9 @@ export default function BooksPage() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 rounded-2xl border-2 border-ink/12 bg-paper-white p-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
           <Input
             placeholder="Tìm theo tên sách, ISBN..."
             className="pl-9"
@@ -138,26 +138,26 @@ export default function BooksPage() {
 
 function BookCard({ book }: { book: Book }) {
   const slug = useSlug();
-  const available = (book.available_count ?? 0) > 0;
+  const available = (book.available_copies ?? 0) > 0;
   const total = book.total_copies ?? book.copies?.length;
 
   return (
     <Link href={`/${slug}/books/${book.id}`} className="group block">
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow group-hover:shadow-md">
-        <div className="flex aspect-[3/4] items-center justify-center bg-slate-100">
+      <div className="overflow-hidden rounded-2xl border-2 border-ink/12 bg-paper-white shadow-pin-sm transition-all group-hover:-translate-y-0.5 group-hover:border-board-blue/40 group-hover:shadow-pin">
+        <div className="flex aspect-[3/4] items-center justify-center bg-paper">
           {book.cover_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={book.cover_url} alt={book.title || book.name || "Bìa sách"} className="h-full w-full object-cover" />
           ) : (
-            <BookOpen className="h-10 w-10 text-slate-300" />
+            <BookOpen className="h-10 w-10 text-ink/20" />
           )}
         </div>
         <div className="p-3">
-          <p className="line-clamp-2 min-h-10 text-sm font-semibold text-slate-900">{book.title || book.name}</p>
-          <p className="mt-1 truncate text-xs text-slate-500">{displayName(book.author) !== "—" ? displayName(book.author) : book.authors?.map((a) => a.name).join(", ") || "Chưa rõ tác giả"}</p>
+          <p className="line-clamp-2 min-h-10 text-sm font-semibold text-ink">{book.title || book.name}</p>
+          <p className="mt-1 truncate text-xs text-ink-soft">{displayName(book.author) !== "—" ? displayName(book.author) : book.authors?.map((a) => a.name).join(", ") || "Chưa rõ tác giả"}</p>
           <div className="mt-2 flex items-center justify-between">
-            <Badge tone={available ? "green" : "red"}>{available ? "Còn sách" : "Hết sách"}</Badge>
-            {typeof total === "number" && <span className="text-xs text-slate-400">{total} bản</span>}
+            <Badge tone={available ? "blue" : "brick"}>{available ? "Còn sách" : "Hết sách"}</Badge>
+            {typeof total === "number" && <span className="tnum text-xs text-ink-faint">{total} bản</span>}
           </div>
         </div>
       </div>

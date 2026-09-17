@@ -1,0 +1,44 @@
+- generic [active] [ref=f1e1]:
+  - generic [ref=f1e2]:
+    - generic [ref=f1e3]: Thư viện Trường học
+    - generic [ref=f1e11]:
+      - generic [ref=f1e12]:
+        - heading "Thư viện trường học, gọn trong một tấm bảng tin duy nhất." [level=1] [ref=f1e13]
+        - paragraph [ref=f1e14]: Thủ thư cho mượn và nhận trả trong vài giây, học sinh tự đặt trước khi hết sách, phụ huynh luôn biết con đang mượn gì. Mỗi trường có một không gian dữ liệu riêng, truy cập qua địa chỉ riêng của trường mình.
+        - link [ref=f1e16] [cursor=pointer]:
+          - /url: /dang-ky
+          - button "Đăng ký cho trường của bạn" [ref=f1e17]
+        - generic [ref=f1e20]:
+          - generic [ref=f1e21]: Trường bạn đã có tài khoản?
+          - generic [ref=f1e22]:
+            - textbox "Trường bạn đã có tài khoản?" [ref=f1e23]:
+              - /placeholder: "vd: truong_nguyensieu"
+            - button "Vào trang đăng nhập" [ref=f1e24]
+      - generic [ref=f1e28]:
+        - paragraph [ref=f1e34]: Sách “Dế Mèn phiêu lưu ký” sắp đến hạn trả — còn 2 ngày.
+        - paragraph [ref=f1e45]: Có 3 trường mới đăng ký, đang chờ quản trị hệ thống duyệt.
+        - paragraph [ref=f1e51]: Đặt trước “Toán 6” đã sẵn sàng — thông báo đã gửi cho học sinh.
+    - generic [ref=f1e53]:
+      - generic [ref=f1e57]:
+        - paragraph [ref=f1e58]: Danh mục sách
+        - paragraph [ref=f1e59]: Tra cứu đầu sách, tác giả, số bản còn sẵn theo thời gian thực.
+      - generic [ref=f1e64]:
+        - paragraph [ref=f1e65]: Mượn / Trả
+        - paragraph [ref=f1e66]: Gán bản sao, tính hạn trả, gia hạn chỉ trong một thao tác.
+      - generic [ref=f1e71]:
+        - paragraph [ref=f1e72]: Đặt trước
+        - paragraph [ref=f1e73]: Tự chuyển 'sẵn sàng' cho người đặt trước khi có sách trả về.
+      - generic [ref=f1e78]:
+        - paragraph [ref=f1e79]: Phạt & quá hạn
+        - paragraph [ref=f1e80]: Theo dõi trễ hạn, thu hoặc miễn phạt ngay tại quầy thủ thư.
+    - generic [ref=f1e82]:
+      - generic [ref=f1e83]:
+        - paragraph [ref=f1e84]: Trường bạn chưa có tài khoản?
+        - paragraph [ref=f1e85]: Gửi đăng ký, quản trị hệ thống xem xét rồi trường của bạn có thể vào dùng ngay — không cần triển khai riêng.
+      - link [ref=f1e86] [cursor=pointer]:
+        - /url: /dang-ky
+        - button "Đăng ký cho trường của bạn" [ref=f1e87]
+    - contentinfo [ref=f1e90]:
+      - link "Đăng nhập quản trị hệ thống" [ref=f1e91] [cursor=pointer]:
+        - /url: /super-admin/login
+  - alert [ref=f1e95]

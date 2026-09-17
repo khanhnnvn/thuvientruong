@@ -1,0 +1,41 @@
+- generic [active] [ref=f2e1]:
+  - generic [ref=f2e3]:
+    - link "Quay lại trang chủ" [ref=f2e4] [cursor=pointer]:
+      - /url: /
+    - generic [ref=f2e12]:
+      - heading "Đăng ký trường mới" [level=1] [ref=f2e13]
+      - paragraph [ref=f2e14]: Điền thông tin trường và tài khoản quản trị đầu tiên — chờ hệ thống phê duyệt trước khi đăng nhập.
+    - generic [ref=f2e15]:
+      - heading "Thông tin đăng ký" [level=2] [ref=f2e17]
+      - generic [ref=f2e19]:
+        - generic [ref=f2e20]:
+          - generic [ref=f2e21]: Tên trường*
+          - textbox "Tên trường*" [ref=f2e22]:
+            - /placeholder: "VD: Trường Tiểu học Nguyễn Siêu"
+        - generic [ref=f2e23]:
+          - generic [ref=f2e24]: "Mã trường (slug) — dùng trong địa chỉ truy cập /{slug}*"
+          - 'textbox "Mã trường (slug) — dùng trong địa chỉ truy cập /{slug}*" [ref=f2e25]':
+            - /placeholder: "vd: truong_nguyensieu"
+        - generic [ref=f2e26]:
+          - generic [ref=f2e27]: Địa chỉ
+          - textbox "Địa chỉ" [ref=f2e28]
+        - generic [ref=f2e29]:
+          - generic [ref=f2e30]:
+            - generic [ref=f2e31]: Số điện thoại liên hệ
+            - textbox "Số điện thoại liên hệ" [ref=f2e32]
+          - generic [ref=f2e33]:
+            - generic [ref=f2e34]: Email liên hệ
+            - textbox "Email liên hệ" [ref=f2e35]
+        - paragraph [ref=f2e38]: Tài khoản quản trị đầu tiên
+        - generic [ref=f2e40]:
+          - generic [ref=f2e41]: Họ tên*
+          - textbox "Họ tên*" [ref=f2e42]
+        - generic [ref=f2e43]:
+          - generic [ref=f2e44]:
+            - generic [ref=f2e45]: Email*
+            - textbox "Email*" [ref=f2e46]
+          - generic [ref=f2e47]:
+            - generic [ref=f2e48]: Mật khẩu*
+            - textbox "Mật khẩu*" [ref=f2e49]
+        - button "Gửi đăng ký" [ref=f2e51]
+  - alert [ref=f2e52]

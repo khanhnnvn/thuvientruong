@@ -74,17 +74,17 @@ function UsersManager() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Quản lý người dùng</h1>
-          <p className="mt-1 text-sm text-slate-500">Tạo tài khoản, gán vai trò, liên kết phụ huynh - học sinh.</p>
+          <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Quản lý người dùng</h1>
+          <p className="mt-1 text-sm text-ink-soft">Tạo tài khoản, gán vai trò, liên kết phụ huynh - học sinh.</p>
         </div>
         <Button onClick={() => setCreateOpen(true)}>
           <Plus className="h-4 w-4" /> Tạo tài khoản
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 rounded-2xl border-2 border-ink/12 bg-paper-white p-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="relative sm:col-span-2">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
           <Input placeholder="Tìm theo tên hoặc email..." className="pl-9" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
         <Select value={role} onChange={(e) => setRole(e.target.value)}>
@@ -108,24 +108,24 @@ function UsersManager() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[720px] text-left text-sm">
                 <thead>
-                  <tr className="border-b border-slate-100 text-xs uppercase text-slate-400">
-                    <th className="py-2 pr-4">Họ tên</th>
-                    <th className="py-2 pr-4">Email</th>
-                    <th className="py-2 pr-4">Vai trò</th>
-                    <th className="py-2 pr-4">Lớp</th>
-                    <th className="py-2 pr-4 text-right">Thao tác</th>
+                  <tr className="divide-x divide-ink/15 border-b-2 border-ink/20 bg-paper text-xs font-semibold uppercase tracking-wide text-ink-faint">
+                    <th className="px-4 py-2">Họ tên</th>
+                    <th className="px-4 py-2">Email</th>
+                    <th className="px-4 py-2">Vai trò</th>
+                    <th className="px-4 py-2">Lớp</th>
+                    <th className="px-4 py-2 text-right">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody>
                   {users.map((u) => (
-                    <tr key={u.id} className="border-b border-slate-50 last:border-0">
-                      <td className="py-2.5 pr-4 font-medium text-slate-800">{displayName(u)}</td>
-                      <td className="py-2.5 pr-4 text-slate-600">{u.email}</td>
-                      <td className="py-2.5 pr-4">
+                    <tr key={u.id} className="divide-x divide-ink/10 border-b border-ink/12 last:border-0 hover:bg-ink/[0.02]">
+                      <td className="px-4 py-2.5 font-semibold text-ink">{displayName(u)}</td>
+                      <td className="px-4 py-2.5 text-ink-soft">{u.email}</td>
+                      <td className="px-4 py-2.5">
                         <StatusBadge status={u.role} />
                       </td>
-                      <td className="py-2.5 pr-4 text-slate-600">{u.class_name || "—"}</td>
-                      <td className="py-2.5 pr-4">
+                      <td className="px-4 py-2.5 text-ink-soft">{u.class_name || "—"}</td>
+                      <td className="px-4 py-2.5">
                         <div className="flex justify-end gap-1.5">
                           <Button size="sm" variant="ghost" onClick={() => setEditUser(u)} title="Sửa">
                             <Pencil className="h-3.5 w-3.5" />
@@ -222,7 +222,7 @@ function UserFormModal({ user, onClose, onSuccess }: { user?: User; onClose: () 
   return (
     <Modal open onClose={onClose} title={isEdit ? "Sửa tài khoản" : "Tạo tài khoản mới"}>
       <form onSubmit={handleSubmit}>
-        {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+        {error && <div className="mb-4 rounded-lg border-2 border-board-brick/25 bg-board-brick/[0.06] px-3 py-2 text-sm font-medium text-board-brick-dark">{error}</div>}
         <FormField>
           <Label htmlFor="name" required>
             Họ tên
@@ -303,7 +303,7 @@ function LinkParentModal({ student, onClose, onSuccess }: { student: User; onClo
   return (
     <Modal open onClose={onClose} title={`Liên kết phụ huynh cho ${displayName(student)}`}>
       <form onSubmit={handleSubmit}>
-        {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+        {error && <div className="mb-4 rounded-lg border-2 border-board-brick/25 bg-board-brick/[0.06] px-3 py-2 text-sm font-medium text-board-brick-dark">{error}</div>}
         <FormField>
           <Label htmlFor="parent_id" required>
             Mã tài khoản phụ huynh (user_id)

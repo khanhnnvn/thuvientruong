@@ -1,0 +1,40 @@
+- generic [active] [ref=f3e1]:
+  - generic [ref=f3e2]:
+    - complementary [ref=f3e3]:
+      - generic [ref=f3e9]:
+        - paragraph [ref=f3e10]: Thư viện Trường học
+        - paragraph [ref=f3e11]: truong-demo
+      - navigation [ref=f3e12]:
+        - link "Tổng quan" [ref=f3e13] [cursor=pointer]:
+          - /url: /truong-demo
+        - link "Sách" [ref=f3e19] [cursor=pointer]:
+          - /url: /truong-demo/books
+        - link "Mượn / Trả" [ref=f3e22] [cursor=pointer]:
+          - /url: /truong-demo/borrow
+        - link "Đặt trước" [ref=f3e26] [cursor=pointer]:
+          - /url: /truong-demo/reservations
+        - link "Phạt" [ref=f3e30] [cursor=pointer]:
+          - /url: /truong-demo/fines
+      - generic [ref=f3e34]:
+        - generic [ref=f3e35]:
+          - generic [ref=f3e36]: "N"
+          - generic [ref=f3e37]:
+            - paragraph [ref=f3e38]: Nguyễn Thị Thủ Thư
+            - paragraph [ref=f3e39]: Thủ thư
+        - button "Đăng xuất" [ref=f3e40]
+    - generic [ref=f3e44]:
+      - banner [ref=f3e45]:
+        - button "Thông báo" [ref=f3e47]
+      - main [ref=f3e51]:
+        - generic [ref=f3e52]:
+          - generic [ref=f3e53]:
+            - generic [ref=f3e54]:
+              - heading "Quản lý mượn / trả" [level=1] [ref=f3e55]
+              - paragraph [ref=f3e56]: Theo dõi sách đang mượn, quá hạn và xử lý cho mượn mới.
+            - button "Cho mượn mới" [ref=f3e57]
+          - generic [ref=f3e59]:
+            - button "Đang mượn" [ref=f3e60]
+            - button "Quá hạn" [ref=f3e61]
+            - button "Tất cả" [ref=f3e62]
+          - paragraph [ref=f3e68]: Đang tải dữ liệu...
+  - alert [ref=f3e69]

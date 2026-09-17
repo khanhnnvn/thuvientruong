@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { BookMarked, CheckCircle2, Loader2, XCircle } from "lucide-react";
+import { ArrowLeft, BookMarked, CheckCircle2, Loader2, XCircle } from "lucide-react";
 import { apiFetchPublic, ApiError } from "@/lib/api";
 import { slugify } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
@@ -16,16 +16,21 @@ export default function SchoolRegisterPage() {
 
   if (submitted) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-white to-emerald-50 px-4">
-        <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-          <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-500" />
-          <h1 className="mt-4 text-xl font-bold text-slate-900">Đã gửi đăng ký</h1>
-          <p className="mt-2 text-sm text-slate-600">
+      <div className="flex min-h-screen items-center justify-center bg-paper px-4">
+        <div className="w-full max-w-md rounded-2xl border-2 border-ink/12 bg-paper-white p-8 text-center shadow-pin-lg">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-board-green-dark text-paper-white">
+            <CheckCircle2 className="h-7 w-7" />
+          </div>
+          <h1 className="mt-5 font-display text-xl font-bold tracking-tight text-ink">Đã gửi đăng ký</h1>
+          <p className="mt-2 text-sm leading-relaxed text-ink-soft">
             Yêu cầu đăng ký trường của bạn đã được ghi nhận. Vui lòng chờ quản trị hệ thống xem xét và phê duyệt —
             bạn sẽ có thể đăng nhập ngay sau khi trường được duyệt.
           </p>
-          <Link href="/" className="mt-6 inline-block text-sm font-medium text-blue-600 hover:underline">
-            Quay lại trang chủ
+          <Link
+            href="/"
+            className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-board-blue-dark hover:underline"
+          >
+            <ArrowLeft className="h-4 w-4" /> Quay lại trang chủ
           </Link>
         </div>
       </div>
@@ -116,17 +121,22 @@ function RegisterForm({ onSubmitted }: { onSubmitted: () => void }) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50 px-4 py-10">
+    <div className="min-h-screen bg-paper px-4 py-10 sm:py-14">
       <div className="mx-auto max-w-2xl">
-        <div className="mb-6 flex flex-col items-center text-center">
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-200">
+        <Link href="/" className="mb-6 inline-flex items-center gap-1.5 text-sm font-semibold text-ink-soft hover:text-ink">
+          <ArrowLeft className="h-4 w-4" /> Quay lại trang chủ
+        </Link>
+
+        <div className="mb-6 flex items-center gap-3">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-board-blue-dark text-paper-white shadow-pin-sm">
             <BookMarked className="h-6 w-6" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">Đăng ký trường mới</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Điền thông tin trường và tài khoản quản trị đầu tiên. Yêu cầu sẽ được quản trị hệ thống phê duyệt trước
-            khi bạn có thể đăng nhập.
-          </p>
+          <div>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Đăng ký trường mới</h1>
+            <p className="mt-0.5 text-sm text-ink-soft">
+              Điền thông tin trường và tài khoản quản trị đầu tiên — chờ hệ thống phê duyệt trước khi đăng nhập.
+            </p>
+          </div>
         </div>
 
         <Card>
@@ -136,7 +146,7 @@ function RegisterForm({ onSubmitted }: { onSubmitted: () => void }) {
           <CardBody>
             <form onSubmit={handleSubmit}>
               {error && (
-                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                <div className="mb-4 rounded-lg border-2 border-board-brick/25 bg-board-brick/[0.06] px-3 py-2 text-sm font-medium text-board-brick-dark">
                   {error}
                 </div>
               )}
@@ -193,8 +203,13 @@ function RegisterForm({ onSubmitted }: { onSubmitted: () => void }) {
                 </FormField>
               </div>
 
-              <hr className="my-5 border-slate-100" />
-              <p className="mb-4 text-sm font-semibold text-slate-700">Tài khoản quản trị đầu tiên của trường</p>
+              <div className="my-6 flex items-center gap-3">
+                <span className="h-px flex-1 bg-ink/10" />
+                <p className="font-display text-xs font-bold uppercase tracking-wide text-ink-soft">
+                  Tài khoản quản trị đầu tiên
+                </p>
+                <span className="h-px flex-1 bg-ink/10" />
+              </div>
 
               <FormField>
                 <Label htmlFor="admin_full_name" required>
@@ -236,10 +251,7 @@ function RegisterForm({ onSubmitted }: { onSubmitted: () => void }) {
                 </FormField>
               </div>
 
-              <div className="mt-2 flex items-center justify-between">
-                <Link href="/" className="text-sm font-medium text-slate-500 hover:underline">
-                  Quay lại trang chủ
-                </Link>
+              <div className="mt-2 flex items-center justify-end">
                 <Button type="submit" loading={submitting} disabled={slugStatus === "taken"}>
                   Gửi đăng ký
                 </Button>
@@ -256,24 +268,24 @@ function SlugHint({ status }: { status: SlugStatus }) {
   if (status === "idle") return null;
   if (status === "checking") {
     return (
-      <p className="mt-1.5 flex items-center gap-1 text-xs text-slate-400">
+      <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-ink-faint">
         <Loader2 className="h-3 w-3 animate-spin" /> Đang kiểm tra...
       </p>
     );
   }
   if (status === "available") {
     return (
-      <p className="mt-1.5 flex items-center gap-1 text-xs text-emerald-600">
+      <p className="mt-1.5 flex items-center gap-1 text-xs font-semibold text-board-green-dark">
         <CheckCircle2 className="h-3 w-3" /> Mã trường còn trống, có thể sử dụng.
       </p>
     );
   }
   if (status === "taken") {
     return (
-      <p className="mt-1.5 flex items-center gap-1 text-xs text-red-600">
+      <p className="mt-1.5 flex items-center gap-1 text-xs font-semibold text-board-brick-dark">
         <XCircle className="h-3 w-3" /> Mã trường đã được sử dụng, vui lòng chọn mã khác.
       </p>
     );
   }
-  return <p className="mt-1.5 text-xs text-slate-400">Không thể kiểm tra mã trường lúc này.</p>;
+  return <p className="mt-1.5 text-xs text-ink-faint">Không thể kiểm tra mã trường lúc này.</p>;
 }

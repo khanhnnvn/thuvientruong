@@ -363,28 +363,34 @@ func (s *Server) listBorrow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	args := []any{schoolID(r)}
-	conds := []string{"school_id = $1"}
+	conds := []string{"br.school_id = $1"}
 	if userID != "" {
 		args = append(args, userID)
-		conds = append(conds, fmt.Sprintf("user_id = $%d", len(args)))
+		conds = append(conds, fmt.Sprintf("br.user_id = $%d", len(args)))
 	}
 	if status != "" {
 		args = append(args, status)
-		conds = append(conds, fmt.Sprintf("status = $%d", len(args)))
+		conds = append(conds, fmt.Sprintf("br.status = $%d", len(args)))
 	}
 	if overdue {
-		conds = append(conds, "status IN ('borrowed','overdue') AND due_at < now()")
+		conds = append(conds, "br.status IN ('borrowed','overdue') AND br.due_at < now()")
 	}
 	where := "WHERE " + strings.Join(conds, " AND ")
 
 	var total int
-	if err := s.pool.QueryRow(r.Context(), `SELECT COUNT(*) FROM borrow_records `+where, args...).Scan(&total); err != nil {
+	if err := s.pool.QueryRow(r.Context(), `SELECT COUNT(*) FROM borrow_records br `+where, args...).Scan(&total); err != nil {
 		s.internalError(w, r, err)
 		return
 	}
 	args = append(args, pageSize, offset)
-	query := fmt.Sprintf(`SELECT %s FROM borrow_records %s ORDER BY borrowed_at DESC LIMIT $%d OFFSET $%d`,
-		borrowColumns, where, len(args)-1, len(args))
+	query := fmt.Sprintf(`SELECT br.id, br.copy_id, br.user_id, br.approved_by, br.borrowed_at, br.due_at, br.returned_at, br.renewed_count, br.status,
+		b.title, bc.copy_code, u.full_name
+		FROM borrow_records br
+		JOIN book_copies bc ON bc.id = br.copy_id
+		JOIN books b ON b.id = bc.book_id
+		JOIN users u ON u.id = br.user_id
+		%s ORDER BY br.borrowed_at DESC LIMIT $%d OFFSET $%d`,
+		where, len(args)-1, len(args))
 	rows, err := s.pool.Query(r.Context(), query, args...)
 	if err != nil {
 		s.internalError(w, r, err)
@@ -393,8 +399,9 @@ func (s *Server) listBorrow(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 	items := []BorrowRecord{}
 	for rows.Next() {
-		b, err := scanBorrow(rows)
-		if err != nil {
+		var b BorrowRecord
+		if err := rows.Scan(&b.ID, &b.CopyID, &b.UserID, &b.ApprovedBy, &b.BorrowedAt, &b.DueAt, &b.ReturnedAt, &b.RenewedCount, &b.Status,
+			&b.BookTitle, &b.CopyCode, &b.BorrowerName); err != nil {
 			s.internalError(w, r, err)
 			return
 		}

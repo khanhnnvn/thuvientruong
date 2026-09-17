@@ -127,6 +127,11 @@ type BorrowRecord struct {
 	ReturnedAt   *time.Time `json:"returned_at,omitempty"`
 	RenewedCount int        `json:"renewed_count"`
 	Status       string     `json:"status"`
+	// Populated only by listBorrow's joined query, so the borrow/return/renew
+	// mutation endpoints (which scan the bare borrowColumns) leave these nil.
+	BookTitle    *string `json:"book_title,omitempty"`
+	CopyCode     *string `json:"copy_code,omitempty"`
+	BorrowerName *string `json:"user_name,omitempty"`
 }
 
 const borrowColumns = `id, copy_id, user_id, approved_by, borrowed_at, due_at, returned_at, renewed_count, status`

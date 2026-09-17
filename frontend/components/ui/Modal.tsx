@@ -35,14 +35,14 @@ export function Modal({
   const sizeClass = size === "sm" ? "max-w-sm" : size === "lg" ? "max-w-2xl" : "max-w-lg";
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
-      <div className={`w-full ${sizeClass} rounded-xl bg-white shadow-xl`}>
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <h3 className="text-base font-semibold text-slate-900">{title}</h3>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4 backdrop-blur-[2px]">
+      <div className={`animate-in fade-in slide-in-from-bottom-2 w-full ${sizeClass} rounded-2xl border border-ink/10 bg-paper-white shadow-pin-lg`}>
+        <div className="flex items-center justify-between border-b border-ink/10 px-5 py-4">
+          <h3 className="font-display text-base font-semibold tracking-tight text-ink">{title}</h3>
           <button
             type="button"
             onClick={onClose}
-            className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            className="rounded-lg p-1.5 text-ink-soft hover:bg-ink/[0.06] hover:text-ink"
             aria-label="Đóng"
           >
             <X className="h-5 w-5" />

@@ -36,31 +36,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const items = navForRole(user.role, slug);
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-paper-light">
       {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-30 bg-slate-900/40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
+        <div className="fixed inset-0 z-30 bg-ink/40 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-slate-200 bg-white transition-transform lg:static lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-ink/10 bg-paper transition-transform lg:static lg:translate-x-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="flex h-16 items-center gap-2 border-b border-slate-100 px-5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white">
+        <div className="flex h-16 items-center gap-2.5 border-b border-ink/10 px-5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-board-blue-dark text-paper-white">
             <BookMarked className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <p className="truncate text-sm font-bold text-slate-900">Thư viện Trường học</p>
-            <p className="truncate text-xs text-slate-400">{slug}</p>
+            <p className="truncate font-display text-sm font-bold tracking-tight text-ink">Thư viện Trường học</p>
+            <p className="mt-0.5 inline-flex max-w-full items-center truncate rounded bg-board-blue/12 px-1.5 py-0.5 text-xs font-semibold text-board-blue-dark">
+              {slug}
+            </p>
           </div>
           <button
             type="button"
-            className="ml-auto rounded p-1 text-slate-400 hover:bg-slate-100 lg:hidden"
+            className="ml-auto rounded p-1 text-ink-soft hover:bg-ink/[0.06] lg:hidden"
             onClick={() => setSidebarOpen(false)}
             aria-label="Đóng menu"
           >
@@ -77,8 +76,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                  active ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-100"
+                  "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold tracking-tight transition-colors",
+                  active
+                    ? "bg-board-blue-dark text-paper-white shadow-pin-sm"
+                    : "text-ink-soft hover:bg-ink/[0.06] hover:text-ink"
                 )}
               >
                 <Icon className="h-5 w-5 shrink-0" />
@@ -88,20 +89,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        <div className="border-t border-slate-100 p-4">
+        <div className="border-t border-ink/10 p-4">
           <div className="mb-3 flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-semibold text-emerald-700">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-board-green-dark text-sm font-bold text-paper-white">
               {displayName(user).charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-slate-900">{displayName(user)}</p>
-              <p className="truncate text-xs text-slate-500">{ROLE_LABELS[user.role] ?? user.role}</p>
+              <p className="truncate text-sm font-semibold text-ink">{displayName(user)}</p>
+              <p className="truncate text-xs text-ink-soft">{ROLE_LABELS[user.role] ?? user.role}</p>
             </div>
           </div>
           <button
             type="button"
             onClick={() => logout()}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600"
+            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-ink-soft hover:bg-board-brick/10 hover:text-board-brick-dark"
           >
             <LogOut className="h-4 w-4" />
             Đăng xuất
@@ -110,10 +111,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-slate-200 bg-white px-4 lg:px-6">
+        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-ink/10 bg-paper-light/95 px-4 backdrop-blur lg:px-8">
           <button
             type="button"
-            className="rounded p-1.5 text-slate-500 hover:bg-slate-100 lg:hidden"
+            className="rounded p-1.5 text-ink-soft hover:bg-ink/[0.06] lg:hidden"
             onClick={() => setSidebarOpen(true)}
             aria-label="Mở menu"
           >

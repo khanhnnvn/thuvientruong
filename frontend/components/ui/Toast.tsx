@@ -28,15 +28,9 @@ const ICONS: Record<ToastVariant, typeof CheckCircle2> = {
 };
 
 const STYLES: Record<ToastVariant, string> = {
-  success: "border-emerald-200 bg-emerald-50 text-emerald-800",
-  error: "border-red-200 bg-red-50 text-red-800",
-  info: "border-blue-200 bg-blue-50 text-blue-800",
-};
-
-const ICON_STYLES: Record<ToastVariant, string> = {
-  success: "text-emerald-500",
-  error: "text-red-500",
-  info: "text-blue-500",
+  success: "border-board-green/30 bg-board-green-dark text-paper-white",
+  error: "border-board-brick/30 bg-board-brick-dark text-paper-white",
+  info: "border-board-blue/30 bg-board-blue-dark text-paper-white",
 };
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
@@ -73,16 +67,16 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               key={t.id}
               role="status"
               className={cn(
-                "flex items-start gap-2 rounded-lg border px-4 py-3 shadow-lg animate-in fade-in slide-in-from-bottom-2",
+                "flex items-start gap-2 rounded-xl border-2 px-4 py-3 shadow-pin animate-in fade-in slide-in-from-bottom-2",
                 STYLES[t.variant]
               )}
             >
-              <Icon className={cn("mt-0.5 h-5 w-5 shrink-0", ICON_STYLES[t.variant])} />
+              <Icon className="mt-0.5 h-5 w-5 shrink-0" />
               <p className="flex-1 text-sm font-medium">{t.message}</p>
               <button
                 type="button"
                 onClick={() => remove(t.id)}
-                className="shrink-0 rounded p-0.5 opacity-60 hover:opacity-100"
+                className="shrink-0 rounded p-0.5 opacity-70 hover:opacity-100"
                 aria-label="Đóng"
               >
                 <X className="h-4 w-4" />

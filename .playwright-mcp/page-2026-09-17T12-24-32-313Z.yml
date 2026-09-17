@@ -1,0 +1,24 @@
+- generic [active] [ref=f6e1]:
+  - generic [ref=f6e20]:
+    - banner [ref=f6e21]:
+      - generic [ref=f6e26]:
+        - paragraph [ref=f6e27]: Quản trị hệ thống
+        - paragraph [ref=f6e28]: superadmin@thuvien.local
+      - button "Đăng xuất" [ref=f6e29]
+    - main [ref=f6e33]:
+      - generic [ref=f6e34]:
+        - generic [ref=f6e35]:
+          - heading "Danh sách trường" [level=1] [ref=f6e36]
+          - paragraph [ref=f6e37]: Duyệt đăng ký trường mới, tạm khoá hoặc mở lại trường đang hoạt động.
+        - generic [ref=f6e38]:
+          - textbox "Tìm theo tên hoặc mã trường..." [ref=f6e40]
+          - combobox [ref=f6e42]:
+            - option "Tất cả trạng thái"
+            - option "Chờ duyệt" [selected]
+            - option "Đã duyệt"
+            - option "Từ chối"
+            - option "Tạm khoá"
+        - generic [ref=f6e45]:
+          - paragraph [ref=f6e49]: Không có trường nào
+          - paragraph [ref=f6e50]: Chưa có trường nào khớp với bộ lọc hiện tại.
+  - alert [ref=f6e19]: Danh sách trường

@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-17T00:00:00Z",
+  "title": "Design System: Thư viện Trường học",
+  "extensions": {
+    "colorMeta": {
+      "paper": { "role": "neutral", "displayName": "Cork Paper", "canonical": "#f3e9d6" },
+      "paper-light": { "role": "neutral", "displayName": "Light Paper", "canonical": "#faf5ec" },
+      "paper-white": { "role": "neutral", "displayName": "Paper White", "canonical": "#fffdf9" },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#2b2621" },
+      "ink-soft": { "role": "neutral", "displayName": "Soft Ink", "canonical": "#6d6152" },
+      "ink-faint": { "role": "neutral", "displayName": "Faint Ink", "canonical": "#a99d8a" },
+      "board-blue": { "role": "primary", "displayName": "Board Blue", "canonical": "#3e7cb1", "tonalRamp": ["#16293a", "#1f3c53", "#2c5a80", "#3e7cb1", "#6a9cc4", "#96bcd7", "#c2ddea", "#e6f1f7"] },
+      "board-blue-dark": { "role": "primary", "displayName": "Board Blue (fill)", "canonical": "#2c5a80" },
+      "board-orange": { "role": "secondary", "displayName": "Board Orange", "canonical": "#e8963c", "tonalRamp": ["#4a2e0f", "#6e4416", "#b06a1e", "#e8963c", "#edb066", "#f2c78f", "#f7deb8", "#fbf0e0"] },
+      "board-orange-dark": { "role": "secondary", "displayName": "Board Orange (fill)", "canonical": "#b06a1e" },
+      "board-brick": { "role": "secondary", "displayName": "Board Brick", "canonical": "#c1502e", "tonalRamp": ["#3a1810", "#5c2618", "#953b21", "#c1502e", "#d17b5c", "#e0a68b", "#eecfbf", "#f8e9e2"] },
+      "board-brick-dark": { "role": "secondary", "displayName": "Board Brick (fill)", "canonical": "#953b21" },
+      "board-green": { "role": "secondary", "displayName": "Board Green", "canonical": "#6b8f5c", "tonalRamp": ["#232f1d", "#374a2c", "#4c6740", "#6b8f5c", "#8fac82", "#b3caa9", "#d6e5d1", "#eef4ec"] },
+      "board-green-dark": { "role": "secondary", "displayName": "Board Green (fill)", "canonical": "#4c6740" },
+      "system-ink": { "role": "neutral", "displayName": "System Ink", "canonical": "#232019" },
+      "system-ink-soft": { "role": "neutral", "displayName": "System Ink Soft", "canonical": "#33302a" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Plus Jakarta Sans", "purpose": "Headings, buttons, badges, stat values, labels. Loaded with the vietnamese Google Fonts subset." },
+      "body": { "displayName": "IBM Plex Sans", "purpose": "Body copy, form fields, table cells. Loaded with the vietnamese Google Fonts subset." }
+    },
+    "shadows": [
+      { "name": "pin-sm", "value": "1px 2px 0 rgba(43,38,33,0.08), 0 3px 8px -4px rgba(43,38,33,0.22)", "purpose": "Resting buttons, small inputs, the pin-dot marker." },
+      { "name": "pin", "value": "2px 4px 0 rgba(43,38,33,0.1), 0 10px 22px -10px rgba(43,38,33,0.28)", "purpose": "Default card elevation, primary button hover, toasts." },
+      { "name": "pin-lg", "value": "3px 6px 0 rgba(43,38,33,0.12), 0 20px 38px -14px rgba(43,38,33,0.32)", "purpose": "The pinned-note device and modals." }
+    ],
+    "motion": [
+      { "name": "pin-in", "value": "620ms cubic-bezier(0.16, 1, 0.3, 1) both — translateY(14px) scale(0.98) rotate(var(--pin-rotate)) to translateY(0) scale(1) rotate(var(--pin-rotate))", "purpose": "Pinned-note settle-in animation (landing notices, feature strip, dashboard hero stat)." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Default call-to-action; solid board-blue fill with a pin shadow that lifts on hover and presses on click.",
+      "html": "<button class=\"ds-btn-primary\">Đăng ký cho trường của bạn</button>",
+      "css": ".ds-btn-primary { background: #2c5a80; color: #fffdf9; font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; font-weight: 600; letter-spacing: -0.01em; border: none; border-radius: 12px; height: 40px; padding: 0 16px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 1px 2px 0 rgba(43,38,33,0.08), 0 3px 8px -4px rgba(43,38,33,0.22); transition: all 150ms; } .ds-btn-primary:hover { background: #234867; box-shadow: 2px 4px 0 rgba(43,38,33,0.1), 0 10px 22px -10px rgba(43,38,33,0.28); } .ds-btn-primary:focus-visible { outline: 2px solid #3e7cb1; outline-offset: 2px; } .ds-btn-primary:active { transform: translateY(1px); box-shadow: 1px 2px 0 rgba(43,38,33,0.08), 0 3px 8px -4px rgba(43,38,33,0.22); }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary action beside a primary button; no fill, no shadow.",
+      "html": "<button class=\"ds-btn-outline\">Huỷ</button>",
+      "css": ".ds-btn-outline { background: #fffdf9; color: #2b2621; font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; font-weight: 600; border: 2px solid rgba(43,38,33,0.2); border-radius: 12px; height: 40px; padding: 0 16px; transition: all 150ms; } .ds-btn-outline:hover { border-color: rgba(43,38,33,0.35); background: #f3e9d6; } .ds-btn-outline:focus-visible { outline: 2px solid #3e7cb1; outline-offset: 2px; } .ds-btn-outline:active { transform: translateY(1px); }"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "badge-status",
+      "description": "Fixed-meaning solid pill: orange = pending/borrow, matches the STATUS_TONE map in Badge.tsx.",
+      "html": "<span class=\"ds-badge\">Chờ xử lý</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; white-space: nowrap; border-radius: 9999px; padding: 4px 10px; font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; font-size: 12px; font-weight: 600; letter-spacing: -0.01em; background: #b06a1e; color: #fffdf9; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Structural container: rounded, subtle border, mid-level pin shadow.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-header\">Quản lý mượn / trả</div><div class=\"ds-card-body\">Nội dung.</div></div>",
+      "css": ".ds-card { border-radius: 16px; border: 1px solid rgba(43,38,33,0.1); background: #fffdf9; box-shadow: 2px 4px 0 rgba(43,38,33,0.1), 0 10px 22px -10px rgba(43,38,33,0.28); overflow: hidden; } .ds-card-header { border-bottom: 1px solid rgba(43,38,33,0.1); padding: 16px 20px; font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; font-weight: 600; color: #2b2621; } .ds-card-body { padding: 16px 20px; font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif; color: #2b2621; }"
+    },
+    {
+      "name": "Pinned Hero Stat",
+      "kind": "custom",
+      "refersTo": "stat-card-hero",
+      "description": "The signature device: solid fill, pin-dot, tilt, layered shadow, oversized tabular number. Used once per screen.",
+      "html": "<div class=\"ds-pin-hero\"><span class=\"ds-pin-dot\"></span><p class=\"ds-pin-hero-label\">Quá hạn chưa trả</p><p class=\"ds-pin-hero-value\">12</p></div>",
+      "css": ".ds-pin-hero { position: relative; border-radius: 16px; padding: 16px 20px; background: #953b21; color: #fffdf9; box-shadow: 3px 6px 0 rgba(43,38,33,0.12), 0 20px 38px -14px rgba(43,38,33,0.32); transform: rotate(-0.6deg); } .ds-pin-dot { position: absolute; top: -8px; left: 24px; height: 16px; width: 16px; border-radius: 9999px; background: #fffdf9; box-shadow: 1px 2px 0 rgba(43,38,33,0.08), 0 3px 8px -4px rgba(43,38,33,0.22); } .ds-pin-hero-label { font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.02em; color: rgba(255,253,249,0.8); } .ds-pin-hero-value { font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; font-size: 36px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Text field: 8px radius, 2px border, blue focus ring.",
+      "html": "<input class=\"ds-input\" placeholder=\"vd: truong_nguyensieu\" />",
+      "css": ".ds-input { width: 100%; border-radius: 8px; border: 2px solid rgba(43,38,33,0.15); background: #fffdf9; padding: 8px 12px; font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif; font-size: 14px; color: #2b2621; transition: border-color 150ms; } .ds-input::placeholder { color: #a99d8a; } .ds-input:focus { outline: none; border-color: #3e7cb1; box-shadow: 0 0 0 4px rgba(62,124,177,0.2); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Bảng Tin Lớp Học (The Classroom Notice Board)",
+    "overview": "The whole product reads as one oversized classroom cork board, not a white-and-blue SaaS dashboard. Every feature, status, and emphasis point is a solid, decisive block of color pinned to the board — never a translucent tinted chip, never a hairline-outlined card pretending to be neutral. Marketing surfaces (landing, registration) sit on the warm cork tone at full saturation; operating surfaces (dashboard, tables) move to a tighter cream-white so a thủ thư staring at the screen for hours gets density without losing the world's warmth. The system explicitly refuses the generic \"headline left, app screenshot right, three feature bullets\" layout that every other school-management product uses. The signature device is the pinned note: a rounded block, a small circular \"pin\" dot straddling its top edge, a layered offset+blur shadow, and a slight rotation. It ships today in exactly three places — the landing page's live-notification cards, the landing feature strip, and the dashboard's oversized hero stat card — driven by one shared mechanism, not three copy-pasted one-offs. Status and data density are handled with the same conviction: four solid board-marker colors carry one fixed meaning everywhere, and data tables keep real ruled gridlines like a printed timetable.",
+    "keyCharacteristics": [
+      "Warm cork/paper grounds, never a cool gray or pure white.",
+      "Four solid, saturated board-marker colors, each with one fixed system-wide meaning — no pastel/tinted status chips.",
+      "The pinned-note device (pin-dot + tilt + layered offset shadow) as the one recurring signature motif, used sparingly for emphasis, not everywhere.",
+      "Ruled, gridded data tables — a deliberate rejection of the hidden-border \"quiet\" SaaS table.",
+      "Plus Jakarta Sans (display) + IBM Plex Sans (body/data), both loaded with the Vietnamese diacritic subset."
+    ],
+    "rules": [
+      { "name": "The Fixed Meaning Rule", "body": "Each board-marker color carries exactly one meaning everywhere it appears — blue = books/catalog, orange = borrow/return + pending, brick = overdue/fines/warning + rejected/suspended, green = reservations/completed + approved. Followed by convention across StatusBadge, StatCard tone, and the landing feature strip; not yet enforced by a shared status→tone mapping utility.", "section": "colors" },
+      { "name": "The Solid Fill Rule", "body": "Board-marker colors appear as full-opacity fills with white text, never as a tinted/pastel background — except the small StatCard icon chip, which deliberately uses a low-opacity tint to stay quiet next to the oversized hero stat.", "section": "colors" },
+      { "name": "The Warm Neutral Rule", "body": "Every neutral — ground, text, or divider — is tinted brown from the ink/paper family. No pure gray or pure white appears anywhere in the palette.", "section": "colors" },
+      { "name": "The Tabular Numerals Rule", "body": "Any number that lines up in a column or reads as a counted quantity carries tabular-nums, applied globally at the body level plus explicitly on stat/table cells.", "section": "typography" },
+      { "name": "The Real Offset Rule", "body": "Every shadow pairs a hard-edged, non-blurred offset layer with a soft blurred ambient layer underneath — never blur-only ambient elevation, never a flat neobrutalist hard shadow.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use the layered pin-sm/pin/pin-lg shadow pair (real offset + soft blur) for anything meant to read as part of this world; never a flat 0-blur hard shadow or a blur-only ambient glow.",
+      "Do keep the four board-marker colors' meanings fixed system-wide when adding any new status or feature-tone assignment (blue=books, orange=borrow/pending, brick=overdue/danger, green=reservations/approved) — follow the existing convention even though it is not yet enforced by a shared mapping utility.",
+      "Do keep data tables ruled and gridded (divide-x/divide-y, border-b-2 header rule) rather than switching to a hidden-border minimal table.",
+      "Do load any new typeface only from a family that ships a Vietnamese (vietnamese) Google Fonts subset.",
+      "Do keep every neutral warm-tinted (ink/paper family); never introduce a true achromatic gray."
+    ],
+    "donts": [
+      "Don't add a fifth solid accent hue — the four board-marker colors (+ -dark variants) are exhaustive.",
+      "Don't render a status or feature tone as a tinted/pastel chip; board-marker colors are solid fills with white text, except the small StatCard icon chip.",
+      "Don't copy the ruled-table markup into a seventh file — it is already duplicated six times with no shared component; extract before adding a new instance.",
+      "Don't apply the pinned-note device (pin-dot + tilt + shadow-pin-lg) to structural or data-dense UI (tables, forms, nav); it is reserved for marketing/hero emphasis and appears in exactly three places today.",
+      "Don't rotate anything other than a pinned-note block — cards, tables, and forms stay axis-aligned."
+    ]
+  }
+}

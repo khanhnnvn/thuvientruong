@@ -9,9 +9,9 @@ export function RoleGate({ allow, children }: { allow: Role[]; children: React.R
   if (!user) return null;
   if (!allow.includes(user.role)) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-amber-200 bg-amber-50 py-16 text-center">
-        <ShieldAlert className="h-8 w-8 text-amber-500" />
-        <p className="text-sm font-semibold text-amber-800">Bạn không có quyền truy cập trang này</p>
+      <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-board-orange/30 bg-board-orange/[0.08] py-16 text-center">
+        <ShieldAlert className="h-8 w-8 text-board-orange-dark" />
+        <p className="text-sm font-semibold text-board-orange-dark">Bạn không có quyền truy cập trang này</p>
       </div>
     );
   }

@@ -1,22 +1,112 @@
 @import "tailwindcss";
 
+/*
+ * "Bảng Tin Lớp Học" — design tokens.
+ * Warm cork/cream world for marketing surfaces, tighter cream-white for
+ * high-density operating screens, four decisive board-marker colors for
+ * features/status, never pastel-washed.
+ */
+@theme {
+  /* Ground */
+  --color-paper: #f3e9d6; /* cork board — marketing/persuade surfaces */
+  --color-paper-light: #faf5ec; /* lighter cream — operate surfaces, data density */
+  --color-paper-white: #fffdf9; /* near-white warm surface for table rows / inputs */
+  --color-ink: #2b2621; /* charcoal ink — primary text */
+  --color-ink-soft: #6d6152; /* secondary text, tinted from ink (never gray) */
+  --color-ink-faint: #a99d8a; /* tertiary text / placeholders, still warm */
+
+  /* Board markers — fixed meaning across the whole system */
+  --color-board-blue: #3e7cb1; /* sách / danh mục */
+  --color-board-blue-dark: #2c5a80;
+  --color-board-orange: #e8963c; /* mượn / trả, pending */
+  --color-board-orange-dark: #b06a1e;
+  --color-board-brick: #c1502e; /* quá hạn / phạt / cảnh báo */
+  --color-board-brick-dark: #953b21;
+  --color-board-green: #6b8f5c; /* đặt trước / hoàn thành / đã duyệt */
+  --color-board-green-dark: #4c6740;
+
+  /* System area (super-admin) — same family, one shade graver */
+  --color-system-ink: #232019;
+  --color-system-ink-soft: #33302a;
+
+  /* Type */
+  --font-display: var(--font-jakarta), "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-plex), "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+
+  /* Pinned-paper depth: real offset + soft blur, never a 0-offset halo */
+  --shadow-pin-sm: 1px 2px 0 rgba(43, 38, 33, 0.08), 0 3px 8px -4px rgba(43, 38, 33, 0.22);
+  --shadow-pin: 2px 4px 0 rgba(43, 38, 33, 0.1), 0 10px 22px -10px rgba(43, 38, 33, 0.28);
+  --shadow-pin-lg: 3px 6px 0 rgba(43, 38, 33, 0.12), 0 20px 38px -14px rgba(43, 38, 33, 0.32);
+}
+
 html,
 body {
   height: 100%;
 }
 
 body {
-  background-color: #f8fafc;
-  color: #0f172a;
-  font-family: var(--font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
+  background-color: var(--color-paper-light);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "tnum" 1;
+  -webkit-font-smoothing: antialiased;
 }
 
 * {
   box-sizing: border-box;
 }
 
+/* Tabular numerals everywhere numbers line up in a data column. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Browser surfaces carry the palette too. */
 ::selection {
-  background-color: #bfdbfe;
+  background-color: var(--color-board-orange);
+  color: #fffdf9;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-board-blue);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--color-ink) 22%, transparent);
+  border-radius: 999px;
+  border: 3px solid var(--color-paper-light);
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--color-ink) 35%, transparent);
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-ink) 22%, transparent) transparent;
+}
+
+/* One authored motion moment: pinned notes settling onto the board. */
+@keyframes pin-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98) rotate(var(--pin-rotate, 0deg));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(var(--pin-rotate, 0deg));
+  }
+}
+
+.animate-pin-in {
+  animation: pin-in 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes fade-in {
@@ -31,15 +121,17 @@ body {
 @keyframes slide-in-from-bottom-2 {
   from {
     transform: translateY(0.5rem);
+    opacity: 0;
   }
   to {
     transform: translateY(0);
+    opacity: 1;
   }
 }
 
 .animate-in {
-  animation-duration: 200ms;
-  animation-timing-function: ease-out;
+  animation-duration: 220ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
   animation-fill-mode: both;
 }
 
@@ -49,4 +141,10 @@ body {
 
 .slide-in-from-bottom-2 {
   animation-name: slide-in-from-bottom-2;
+}
+
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
 }

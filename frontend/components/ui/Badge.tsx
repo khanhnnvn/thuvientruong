@@ -1,48 +1,60 @@
 import { cn } from "@/lib/utils";
 
-type Tone = "slate" | "blue" | "green" | "amber" | "red" | "purple";
+type Tone = "blue" | "orange" | "brick" | "green" | "neutral";
 
+// Solid, decisive fills — a status reads like a marker-colored tag pinned to
+// the board, never a pastel SaaS chip. `neutral` is an outlined ink label,
+// reserved for things that aren't a lifecycle state (roles, "no status").
 const TONE_CLASSES: Record<Tone, string> = {
-  slate: "bg-slate-100 text-slate-700",
-  blue: "bg-blue-100 text-blue-700",
-  green: "bg-emerald-100 text-emerald-700",
-  amber: "bg-amber-100 text-amber-700",
-  red: "bg-red-100 text-red-700",
-  purple: "bg-purple-100 text-purple-700",
+  blue: "bg-board-blue-dark text-paper-white",
+  orange: "bg-board-orange-dark text-paper-white",
+  brick: "bg-board-brick-dark text-paper-white",
+  green: "bg-board-green-dark text-paper-white",
+  neutral: "border border-ink/20 bg-transparent text-ink-soft",
 };
 
-export function Badge({ children, tone = "slate", className }: { children: React.ReactNode; tone?: Tone; className?: string }) {
+export function Badge({ children, tone = "neutral", className }: { children: React.ReactNode; tone?: Tone; className?: string }) {
   return (
-    <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium", TONE_CLASSES[tone], className)}>
+    <span
+      className={cn(
+        "inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold tracking-tight",
+        TONE_CLASSES[tone],
+        className
+      )}
+    >
       {children}
     </span>
   );
 }
 
+// Fixed, system-wide meaning: xanh = sách/danh mục, cam = mượn/trả (+ pending),
+// gạch = quá hạn/phạt/cảnh báo (+ rejected/suspended), lá = đặt trước/hoàn
+// thành/đã duyệt. Roles are not a lifecycle state, so they get the neutral
+// outline label instead of borrowing a status color.
 const STATUS_TONE: Record<string, Tone> = {
-  available: "green",
-  borrowed: "blue",
-  reserved: "amber",
-  lost: "red",
-  damaged: "red",
-  maintenance: "slate",
-  overdue: "red",
-  returned: "slate",
-  pending: "amber",
-  ready: "blue",
+  available: "blue",
+  borrowed: "orange",
+  reserved: "green",
+  lost: "brick",
+  damaged: "brick",
+  maintenance: "neutral",
+  overdue: "brick",
+  returned: "green",
+  pending: "orange",
+  ready: "green",
   fulfilled: "green",
-  cancelled: "slate",
-  unpaid: "red",
+  cancelled: "neutral",
+  unpaid: "brick",
   paid: "green",
-  waived: "slate",
-  admin: "purple",
-  librarian: "blue",
-  teacher: "green",
-  student: "amber",
-  parent: "slate",
+  waived: "neutral",
+  admin: "neutral",
+  librarian: "neutral",
+  teacher: "neutral",
+  student: "neutral",
+  parent: "neutral",
   approved: "green",
-  rejected: "red",
-  suspended: "amber",
+  rejected: "brick",
+  suspended: "brick",
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -74,5 +86,5 @@ const STATUS_LABEL: Record<string, string> = {
 export function StatusBadge({ status }: { status?: string | null }) {
   if (!status) return <Badge>—</Badge>;
   const key = status.toLowerCase();
-  return <Badge tone={STATUS_TONE[key] ?? "slate"}>{STATUS_LABEL[key] ?? status}</Badge>;
+  return <Badge tone={STATUS_TONE[key] ?? "neutral"}>{STATUS_LABEL[key] ?? status}</Badge>;
 }

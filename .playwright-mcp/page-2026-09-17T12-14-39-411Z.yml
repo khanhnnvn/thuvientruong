@@ -1,0 +1,56 @@
+- generic [active] [ref=f10e1]:
+  - generic [ref=f10e2]:
+    - complementary [ref=f10e3]:
+      - generic [ref=f10e9]:
+        - paragraph [ref=f10e10]: Thư viện Trường học
+        - paragraph [ref=f10e11]: truong-demo
+      - navigation [ref=f10e12]:
+        - link "Tổng quan" [ref=f10e13] [cursor=pointer]:
+          - /url: /truong-demo
+        - link "Sách" [ref=f10e19] [cursor=pointer]:
+          - /url: /truong-demo/books
+        - link "Mượn / Trả" [ref=f10e22] [cursor=pointer]:
+          - /url: /truong-demo/borrow
+        - link "Đặt trước" [ref=f10e26] [cursor=pointer]:
+          - /url: /truong-demo/reservations
+        - link "Phạt" [ref=f10e30] [cursor=pointer]:
+          - /url: /truong-demo/fines
+      - generic [ref=f10e34]:
+        - generic [ref=f10e35]:
+          - generic [ref=f10e36]: "N"
+          - generic [ref=f10e37]:
+            - paragraph [ref=f10e38]: Nguyễn Thị Thủ Thư
+            - paragraph [ref=f10e39]: Thủ thư
+        - button "Đăng xuất" [ref=f10e40]
+    - generic [ref=f10e44]:
+      - banner [ref=f10e45]:
+        - button "Thông báo" [ref=f10e47]
+      - main [ref=f10e51]:
+        - generic [ref=f10e52]:
+          - generic [ref=f10e53]:
+            - generic [ref=f10e54]:
+              - heading "Quản lý mượn / trả" [level=1] [ref=f10e55]
+              - paragraph [ref=f10e56]: Theo dõi sách đang mượn, quá hạn và xử lý cho mượn mới.
+            - button "Cho mượn mới" [ref=f10e57]
+          - generic [ref=f10e59]:
+            - button "Đang mượn" [ref=f10e60]
+            - button "Quá hạn" [ref=f10e61]
+            - button "Tất cả" [ref=f10e62]
+          - table [ref=f10e71]:
+            - rowgroup [ref=f10e72]:
+              - row [ref=f10e73]:
+                - columnheader "Sách" [ref=f10e74]
+                - columnheader "Người mượn" [ref=f10e75]
+                - columnheader "Ngày mượn" [ref=f10e76]
+                - columnheader "Hạn trả" [ref=f10e77]
+                - columnheader "Trạng thái" [ref=f10e78]
+                - columnheader "Thao tác" [ref=f10e79]
+            - rowgroup [ref=f10e80]:
+              - row [ref=f10e81]:
+                - cell "Mắt biếc" [ref=f10e82]
+                - cell "Lê Văn Học Sinh" [ref=f10e83]
+                - cell "17/09/2026" [ref=f10e84]
+                - cell "01/10/2026" [ref=f10e85]
+                - cell "Đã trả" [ref=f10e86]
+                - cell [ref=f10e88]
+  - alert [ref=f10e69]

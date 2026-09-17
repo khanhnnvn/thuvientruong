@@ -16,3 +16,4 @@ frontend/out/
 # OS
 .DS_Store
 .impeccable/review/
+.playwright-mcp/
